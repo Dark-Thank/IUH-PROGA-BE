@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL Database Container
+  postgres:
+    image: postgres:16-alpine
+    container_name: proga-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Redis Caching Container
+  redis:
+    image: redis:alpine
+    container_name: proga-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # 3. Eureka Discovery Server (Port 8761)
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    container_name: proga-eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  # 4. API Gateway (Port 8080)
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: proga-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+
+  # 5. Auth Service (Port 8081)
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: proga-auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/proga_auth_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=123456
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  # 6. Workspace Service (Port 8082)
+  workspace-service:
+    build:
+      context: ./workspace-service
+      dockerfile: Dockerfile
+    container_name: proga-workspace-service
+    ports:
+      - "8082:8082"
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/proga_workspace_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=123456
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      eureka-server:
+        condition: service_started
+
+  # 7. AI Service (Port 8083)
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: proga-ai-service
+    ports:
+      - "8083:8083"
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/proga_ai_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=123456
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  # 8. Notification Service (Port 8084)
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: proga-notification-service
+    ports:
+      - "8084:8084"
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/proga_notification_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=123456
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  redis_data:
