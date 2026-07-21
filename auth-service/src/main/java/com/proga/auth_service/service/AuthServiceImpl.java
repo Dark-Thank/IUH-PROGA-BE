@@ -15,6 +15,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -43,13 +45,7 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
-        return UserResponse.builder()
-                .id(savedUser.getId())
-                .username(savedUser.getUsername())
-                .email(savedUser.getEmail())
-                .isAdmin(savedUser.getIsAdmin())
-                .createdAt(savedUser.getCreatedAt())
-                .build();
+        return mapToResponse(savedUser);
     }
 
     @Override
@@ -69,18 +65,27 @@ public class AuthServiceImpl implements AuthService {
 
         String token = tokenProvider.generateToken(authentication);
 
-        UserResponse userResponse = UserResponse.builder()
+        return AuthResponse.builder()
+                .accessToken(token)
+                .tokenType("Bearer")
+                .user(mapToResponse(user))
+                .build();
+    }
+
+    @Override
+    public UserResponse getCurrentUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        return mapToResponse(user);
+    }
+
+    private UserResponse mapToResponse(User user) {
+        return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .isAdmin(user.getIsAdmin())
                 .createdAt(user.getCreatedAt())
-                .build();
-
-        return AuthResponse.builder()
-                .accessToken(token)
-                .tokenType("Bearer")
-                .user(userResponse)
                 .build();
     }
 }
