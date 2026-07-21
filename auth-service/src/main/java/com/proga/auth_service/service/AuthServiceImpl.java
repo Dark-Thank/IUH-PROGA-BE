@@ -6,7 +6,12 @@ import com.proga.auth_service.dto.RegisterRequest;
 import com.proga.auth_service.dto.UserResponse;
 import com.proga.auth_service.model.User;
 import com.proga.auth_service.repository.UserRepository;
+import com.proga.auth_service.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +21,8 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider tokenProvider;
 
     @Override
     public UserResponse register(RegisterRequest request) {
@@ -47,13 +54,20 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(LoginRequest request) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getUsernameOrEmail(),
+                        request.getPassword()
+                )
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
         User user = userRepository.findByUsername(request.getUsernameOrEmail())
                 .or(() -> userRepository.findByEmail(request.getUsernameOrEmail()))
-                .orElseThrow(() -> new RuntimeException("Invalid username/email or password"));
+                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid username/email or password");
-        }
+        String token = tokenProvider.generateToken(authentication);
 
         UserResponse userResponse = UserResponse.builder()
                 .id(user.getId())
@@ -64,7 +78,7 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         return AuthResponse.builder()
-                .accessToken("dummy-jwt-token-placeholder")
+                .accessToken(token)
                 .tokenType("Bearer")
                 .user(userResponse)
                 .build();
