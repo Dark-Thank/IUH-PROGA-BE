@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface SpaceRepository extends JpaRepository<Space, UUID> {
-    List<Space> findByWorkspaceId(UUID workspaceId);
-    boolean existsByNameAndWorkspaceId(String name, UUID workspaceId);
+public interface SpaceRepository extends JpaRepository<Space, Long> {
+    List<Space> findByWorkspaceId(long workspaceId);
+    boolean existsByNameAndWorkspaceId(String name, long workspaceId);
 }

@@ -35,21 +35,21 @@ public class SpaceServiceImpl implements SpaceService {
     }
 
     @Override
-    public SpaceResponse getSpaceById(UUID id) {
+    public SpaceResponse getSpaceById(long id) {
         Space space = spaceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Space not found with id: " + id));
         return mapToResponse(space);
     }
 
     @Override
-    public List<SpaceResponse> getSpacesByWorkspace(UUID workspaceId) {
+    public List<SpaceResponse> getSpacesByWorkspace(long workspaceId) {
         return spaceRepository.findByWorkspaceId(workspaceId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public SpaceResponse updateSpace(UUID id, SpaceRequest request) {
+    public SpaceResponse updateSpace(long id, SpaceRequest request) {
         Space space = spaceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Space not found with id: " + id));
 
@@ -62,7 +62,7 @@ public class SpaceServiceImpl implements SpaceService {
     }
 
     @Override
-    public void deleteSpace(UUID id) {
+    public void deleteSpace(long id) {
         if (!spaceRepository.existsById(id)) {
             throw new RuntimeException("Space not found with id: " + id);
         }

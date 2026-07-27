@@ -15,7 +15,7 @@ import java.util.UUID;
 public class SpaceRequest {
 
     @NotNull(message = "Workspace ID is required")
-    private UUID workspaceId;
+    private long workspaceId;
 
     @NotBlank(message = "Space name cannot be blank")
     private String name;

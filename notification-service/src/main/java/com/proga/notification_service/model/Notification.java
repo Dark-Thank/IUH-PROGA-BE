@@ -18,14 +18,13 @@ public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
+    private long id;
 
     @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    private long userId;
 
     @Column(name = "workspace_id")
-    private UUID workspaceId;
+    private Long workspaceId;
 
     @Column(name = "title", length = 150)
     private String title;

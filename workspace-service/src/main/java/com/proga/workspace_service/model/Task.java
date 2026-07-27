@@ -17,12 +17,11 @@ import java.util.UUID;
 public class Task {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", nullable = false, updatable = false)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
 
     @Column(name = "space_id", nullable = false)
-    private UUID spaceId;
+    private long spaceId;
 
     @Column(name = "title", nullable = false, length = 150)
     private String title;
@@ -39,7 +38,7 @@ public class Task {
     private Priority priority;
 
     @Column(name = "owner_id")
-    private UUID ownerId;
+    private Long ownerId;
 
     @Column(name = "start_date")
     private LocalDateTime startDate;

@@ -18,11 +18,10 @@ public class AiChatMessage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
+    private long id;
 
     @Column(name = "thread_id", nullable = false)
-    private UUID threadId;
+    private long threadId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "sender_type", length = 20, nullable = false)

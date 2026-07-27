@@ -32,12 +32,12 @@ public class JwtTokenProvider {
         return generateTokenFromUser(userPrincipal.getId(), userPrincipal.getUsername(), userPrincipal.getIsAdmin());
     }
 
-    public String generateTokenFromUser(UUID userId, String username, Boolean isAdmin) {
+    public String generateTokenFromUser(long userId, String username, Boolean isAdmin) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
         return Jwts.builder()
-                .subject(userId.toString())
+                .subject(String.valueOf(userId))
                 .claim("username", username)
                 .claim("isAdmin", isAdmin)
                 .issuedAt(now)
@@ -46,14 +46,14 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public UUID getUserIdFromJWT(String token) {
+    public long getUserIdFromJWT(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
 
-        return UUID.fromString(claims.getSubject());
+        return Long.parseLong(claims.getSubject());
     }
 
     public boolean validateToken(String authToken) {

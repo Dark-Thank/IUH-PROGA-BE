@@ -11,9 +11,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class WorkspaceResponse {
-    private UUID id;
+    private long id;
     private String name;
     private String description;
-    private UUID ownerId;
+    private long ownerId;
     private LocalDateTime createdAt;
 }
