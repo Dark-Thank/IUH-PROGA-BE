@@ -22,10 +22,10 @@ public class TaskNote {
     private Long id;
 
     @Column(name = "task_id", nullable = false)
-    private UUID taskId;
+    private long taskId;
 
     @Column(name = "author_id", nullable = false)
-    private UUID authorId;
+    private long authorId;
 
     @Column(name = "note_content", columnDefinition = "TEXT")
     private String noteContent;

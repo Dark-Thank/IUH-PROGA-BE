@@ -9,6 +9,6 @@ import java.util.UUID;
 
 @Repository
 public interface WorkspaceLogRepository extends JpaRepository<WorkspaceLog, Long> {
-    List<WorkspaceLog> findByWorkspaceIdOrderByCreatedAtDesc(UUID workspaceId);
-    List<WorkspaceLog> findByTaskIdOrderByCreatedAtDesc(UUID taskId);
+    List<WorkspaceLog> findByWorkspaceIdOrderByCreatedAtDesc(long workspaceId);
+    List<WorkspaceLog> findByTaskIdOrderByCreatedAtDesc(long taskId);
 }

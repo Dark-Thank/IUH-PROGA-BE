@@ -13,13 +13,13 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class TaskResponse {
-    private UUID id;
-    private UUID spaceId;
+    private long id;
+    private long spaceId;
     private String title;
     private String description;
     private TaskStatus status;
     private Priority priority;
-    private UUID ownerId;
+    private Long ownerId;
     private LocalDateTime startDate;
     private LocalDateTime dueDate;
     private LocalDateTime createdAt;

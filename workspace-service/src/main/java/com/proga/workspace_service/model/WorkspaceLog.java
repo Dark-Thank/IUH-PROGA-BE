@@ -22,13 +22,13 @@ public class WorkspaceLog {
     private Long id;
 
     @Column(name = "workspace_id", nullable = false)
-    private UUID workspaceId;
+    private long workspaceId;
 
     @Column(name = "task_id")
-    private UUID taskId;
+    private Long taskId;
 
     @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    private long userId;
 
     @Column(name = "action_type", length = 50)
     private String actionType;

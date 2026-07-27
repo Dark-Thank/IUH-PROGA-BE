@@ -17,15 +17,14 @@ import java.util.UUID;
 public class AiThread {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", nullable = false, updatable = false)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    protected long id;
 
     @Column(name = "openai_thread_id", length = 100)
     private String openaiThreadId;
 
     @Column(name = "space_id", nullable = false)
-    private UUID spaceId;
+    private long spaceId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "agent_type", length = 30, nullable = false)

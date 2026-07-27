@@ -11,8 +11,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class SpaceResponse {
-    private UUID id;
-    private UUID workspaceId;
+    private long id;
+    private long workspaceId;
     private String name;
     private LocalDateTime startDate;
     private LocalDateTime endDate;

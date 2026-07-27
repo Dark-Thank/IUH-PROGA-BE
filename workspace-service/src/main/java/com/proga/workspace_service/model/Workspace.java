@@ -17,9 +17,8 @@ import java.util.UUID;
 public class Workspace {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", nullable = false, updatable = false)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    protected long id;
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
@@ -28,7 +27,7 @@ public class Workspace {
     private String description;
 
     @Column(name = "owner_id", nullable = false)
-    private UUID ownerId;
+    private long ownerId;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

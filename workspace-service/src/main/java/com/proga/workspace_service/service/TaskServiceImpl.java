@@ -37,28 +37,28 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TaskResponse getTaskById(UUID id) {
+    public TaskResponse getTaskById(long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
         return mapToResponse(task);
     }
 
     @Override
-    public List<TaskResponse> getTasksBySpace(UUID spaceId) {
+    public List<TaskResponse> getTasksBySpace(long spaceId) {
         return taskRepository.findBySpaceId(spaceId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<TaskResponse> getTasksByOwner(UUID ownerId) {
+    public List<TaskResponse> getTasksByOwner(long ownerId) {
         return taskRepository.findByOwnerId(ownerId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public TaskResponse updateTask(UUID id, TaskRequest request) {
+    public TaskResponse updateTask(long id, TaskRequest request) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
 
@@ -75,7 +75,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TaskResponse updateTaskStatus(UUID id, TaskStatus status) {
+    public TaskResponse updateTaskStatus(long id, TaskStatus status) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
         task.setStatus(status);
@@ -84,7 +84,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public void deleteTask(UUID id) {
+    public void deleteTask(long id) {
         if (!taskRepository.existsById(id)) {
             throw new RuntimeException("Task not found with id: " + id);
         }

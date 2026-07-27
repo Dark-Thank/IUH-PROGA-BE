@@ -10,10 +10,10 @@ import java.util.UUID;
 
 public interface TaskService {
     TaskResponse createTask(TaskRequest request);
-    TaskResponse getTaskById(UUID id);
-    List<TaskResponse> getTasksBySpace(UUID spaceId);
-    List<TaskResponse> getTasksByOwner(UUID ownerId);
-    TaskResponse updateTask(UUID id, TaskRequest request);
-    TaskResponse updateTaskStatus(UUID id, TaskStatus status);
-    void deleteTask(UUID id);
+    TaskResponse getTaskById(long id);
+    List<TaskResponse> getTasksBySpace(long spaceId);
+    List<TaskResponse> getTasksByOwner(long ownerId);
+    TaskResponse updateTask(long id, TaskRequest request);
+    TaskResponse updateTaskStatus(long id, TaskStatus status);
+    void deleteTask(long id);
 }
