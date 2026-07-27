@@ -23,6 +23,10 @@ INSERT INTO users (id, username, email, password, is_admin, created_at) VALUES
 (5, 'tester_hoa', 'hoa@proga.iuh.edu.vn', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, NOW())
 ON CONFLICT (id) DO NOTHING;
 
+-- Reset sequences cho proga_auth_db để tránh lỗi trùng khóa khi insert tự động sau này
+SELECT setval(pg_get_serial_sequence('roles', 'id'), COALESCE(MAX(id), 1)) FROM roles;
+SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE(MAX(id), 1)) FROM users;
+
 
 -- =============================================================================
 -- 2. CONNECT TO DATABASE: proga_workspace_db
@@ -67,3 +71,10 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO workspace_logs (id, workspace_id, task_id, user_id, action_type, old_value, new_value, log_message, created_at) VALUES 
 (1, 1, 2, 4, 'STATUS_CHANGE', 'TODO', 'IN_PROGRESS', 'Người dùng dev_duy đã chuyển trạng thái Task sang IN_PROGRESS', NOW())
 ON CONFLICT (id) DO NOTHING;
+
+-- Reset sequences cho proga_workspace_db để tránh lỗi trùng khóa khi insert tự động sau này
+SELECT setval(pg_get_serial_sequence('workspaces', 'id'), COALESCE(MAX(id), 1)) FROM workspaces;
+SELECT setval(pg_get_serial_sequence('spaces', 'id'), COALESCE(MAX(id), 1)) FROM spaces;
+SELECT setval(pg_get_serial_sequence('tasks', 'id'), COALESCE(MAX(id), 1)) FROM tasks;
+SELECT setval(pg_get_serial_sequence('task_notes', 'id'), COALESCE(MAX(id), 1)) FROM task_notes;
+SELECT setval(pg_get_serial_sequence('workspace_logs', 'id'), COALESCE(MAX(id), 1)) FROM workspace_logs;

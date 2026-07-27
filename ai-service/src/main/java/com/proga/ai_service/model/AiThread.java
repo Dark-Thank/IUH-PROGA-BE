@@ -17,8 +17,8 @@ import java.util.UUID;
 public class AiThread {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    protected long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
 
     @Column(name = "openai_thread_id", length = 100)
     private String openaiThreadId;

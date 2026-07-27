@@ -17,8 +17,8 @@ import java.util.UUID;
 public class Workspace {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    protected long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
