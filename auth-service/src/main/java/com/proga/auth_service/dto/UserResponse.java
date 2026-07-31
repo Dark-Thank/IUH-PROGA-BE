@@ -10,7 +10,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class UserResponse {
-    private UUID id;
+    private long id;
     private String username;
     private String email;
     private Boolean isAdmin;

@@ -19,5 +19,5 @@ public class WorkspaceRequest {
     private String description;
 
     @NotNull(message = "Owner ID is required")
-    private UUID ownerId;
+    private long ownerId;
 }

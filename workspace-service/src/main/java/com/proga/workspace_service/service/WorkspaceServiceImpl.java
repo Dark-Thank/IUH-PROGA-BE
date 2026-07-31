@@ -34,36 +34,34 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     }
 
     @Override
-    public WorkspaceResponse getWorkspaceById(UUID id) {
+    public WorkspaceResponse getWorkspaceById(long id) {
         Workspace workspace = workspaceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Workspace not found with id: " + id));
         return mapToResponse(workspace);
     }
 
     @Override
-    public List<WorkspaceResponse> getWorkspacesByOwner(UUID ownerId) {
+    public List<WorkspaceResponse> getWorkspacesByOwner(long ownerId) {
         return workspaceRepository.findByOwnerId(ownerId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public WorkspaceResponse updateWorkspace(UUID id, WorkspaceRequest request) {
+    public WorkspaceResponse updateWorkspace(long id, WorkspaceRequest request) {
         Workspace workspace = workspaceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Workspace not found with id: " + id));
 
         workspace.setName(request.getName());
         workspace.setDescription(request.getDescription());
-        if (request.getOwnerId() != null) {
-            workspace.setOwnerId(request.getOwnerId());
-        }
+        workspace.setOwnerId(request.getOwnerId());
 
         Workspace updated = workspaceRepository.save(workspace);
         return mapToResponse(updated);
     }
 
     @Override
-    public void deleteWorkspace(UUID id) {
+    public void deleteWorkspace(long id) {
         if (!workspaceRepository.existsById(id)) {
             throw new RuntimeException("Workspace not found with id: " + id);
         }

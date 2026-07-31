@@ -7,5 +7,5 @@ import java.util.UUID;
 
 public interface UserService {
     List<UserResponse> getAllUsers();
-    UserResponse getUserById(UUID id);
+    UserResponse getUserById(long id);
 }

@@ -8,8 +8,8 @@ import java.util.UUID;
 
 public interface SpaceService {
     SpaceResponse createSpace(SpaceRequest request);
-    SpaceResponse getSpaceById(UUID id);
-    List<SpaceResponse> getSpacesByWorkspace(UUID workspaceId);
-    SpaceResponse updateSpace(UUID id, SpaceRequest request);
-    void deleteSpace(UUID id);
+    SpaceResponse getSpaceById(long id);
+    List<SpaceResponse> getSpacesByWorkspace(long workspaceId);
+    SpaceResponse updateSpace(long id, SpaceRequest request);
+    void deleteSpace(long id);
 }

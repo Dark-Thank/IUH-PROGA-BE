@@ -1,25 +1,27 @@
 package com.proga.workspace_service.dto;
 
+import com.proga.workspace_service.model.SprintStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SpaceRequest {
+public class SprintRequest {
 
-    @NotNull(message = "Workspace ID is required")
-    private long workspaceId;
+    @NotNull(message = "Space ID is required")
+    private long spaceId;
 
-    @NotBlank(message = "Space name cannot be blank")
+    @NotBlank(message = "Sprint name cannot be blank")
     private String name;
 
+    private String goal;
+    private SprintStatus status;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
 }

@@ -17,7 +17,9 @@ import java.util.UUID;
 public class TaskRequest {
 
     @NotNull(message = "Space ID is required")
-    private UUID spaceId;
+    private long spaceId;
+
+    private Long sprintId;
 
     @NotBlank(message = "Task title cannot be blank")
     private String title;
@@ -25,7 +27,7 @@ public class TaskRequest {
     private String description;
     private TaskStatus status;
     private Priority priority;
-    private UUID ownerId;
+    private Long ownerId;
     private LocalDateTime startDate;
     private LocalDateTime dueDate;
 }

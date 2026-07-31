@@ -27,34 +27,39 @@ public class TaskController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<TaskResponse>> getTaskById(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<TaskResponse>> getTaskById(@PathVariable long id) {
         return ResponseEntity.ok(ApiResponse.success(taskService.getTaskById(id)));
     }
 
     @GetMapping("/space/{spaceId}")
-    public ResponseEntity<ApiResponse<List<TaskResponse>>> getTasksBySpace(@PathVariable UUID spaceId) {
+    public ResponseEntity<ApiResponse<List<TaskResponse>>> getTasksBySpace(@PathVariable long spaceId) {
         return ResponseEntity.ok(ApiResponse.success(taskService.getTasksBySpace(spaceId)));
     }
 
+    @GetMapping("/sprint/{sprintId}")
+    public ResponseEntity<ApiResponse<List<TaskResponse>>> getTasksBySprint(@PathVariable long sprintId) {
+        return ResponseEntity.ok(ApiResponse.success(taskService.getTasksBySprint(sprintId)));
+    }
+
     @GetMapping("/owner/{ownerId}")
-    public ResponseEntity<ApiResponse<List<TaskResponse>>> getTasksByOwner(@PathVariable UUID ownerId) {
+    public ResponseEntity<ApiResponse<List<TaskResponse>>> getTasksByOwner(@PathVariable long ownerId) {
         return ResponseEntity.ok(ApiResponse.success(taskService.getTasksByOwner(ownerId)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<TaskResponse>> updateTask(@PathVariable UUID id, @Valid @RequestBody TaskRequest request) {
+    public ResponseEntity<ApiResponse<TaskResponse>> updateTask(@PathVariable long id, @Valid @RequestBody TaskRequest request) {
         TaskResponse response = taskService.updateTask(id, request);
         return ResponseEntity.ok(ApiResponse.success("Task updated successfully", response));
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<ApiResponse<TaskResponse>> updateTaskStatus(@PathVariable UUID id, @RequestParam TaskStatus status) {
+    public ResponseEntity<ApiResponse<TaskResponse>> updateTaskStatus(@PathVariable long id, @RequestParam TaskStatus status) {
         TaskResponse response = taskService.updateTaskStatus(id, status);
         return ResponseEntity.ok(ApiResponse.success("Task status updated successfully", response));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteTask(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<Void>> deleteTask(@PathVariable long id) {
         taskService.deleteTask(id);
         return ResponseEntity.ok(ApiResponse.success("Task deleted successfully", null));
     }

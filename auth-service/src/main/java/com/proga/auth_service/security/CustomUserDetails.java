@@ -15,7 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
-    private final UUID id;
+    private final long id;
     private final String username;
     private final String email;
     private final String password;

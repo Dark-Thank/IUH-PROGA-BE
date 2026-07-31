@@ -17,10 +17,10 @@ import java.util.UUID;
 public class ProjectMemberId implements Serializable {
 
     @Column(name = "workspace_id", nullable = false)
-    private UUID workspaceId;
+    private long workspaceId;
 
     @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    private long userId;
 
     @Column(name = "role_id", nullable = false)
     private Long roleId;

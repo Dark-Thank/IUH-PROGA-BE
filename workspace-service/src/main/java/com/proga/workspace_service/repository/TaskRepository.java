@@ -10,10 +10,11 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface TaskRepository extends JpaRepository<Task, UUID> {
-    List<Task> findBySpaceId(UUID spaceId);
-    List<Task> findByOwnerId(UUID ownerId);
-    List<Task> findBySpaceIdAndStatus(UUID spaceId, TaskStatus status);
-    List<Task> findBySpaceIdAndPriority(UUID spaceId, Priority priority);
-    List<Task> findBySpaceIdAndOwnerId(UUID spaceId, UUID ownerId);
+public interface TaskRepository extends JpaRepository<Task, Long> {
+    List<Task> findBySpaceId(long spaceId);
+    List<Task> findBySprintId(Long sprintId);
+    List<Task> findByOwnerId(long ownerId);
+    List<Task> findBySpaceIdAndStatus(long spaceId, TaskStatus status);
+    List<Task> findBySpaceIdAndPriority(long spaceId, Priority priority);
+    List<Task> findBySpaceIdAndOwnerId(long spaceId, long ownerId);
 }

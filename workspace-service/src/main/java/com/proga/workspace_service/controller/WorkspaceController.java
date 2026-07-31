@@ -26,23 +26,23 @@ public class WorkspaceController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<WorkspaceResponse>> getWorkspaceById(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<WorkspaceResponse>> getWorkspaceById(@PathVariable long id) {
         return ResponseEntity.ok(ApiResponse.success(workspaceService.getWorkspaceById(id)));
     }
 
     @GetMapping("/owner/{ownerId}")
-    public ResponseEntity<ApiResponse<List<WorkspaceResponse>>> getWorkspacesByOwner(@PathVariable UUID ownerId) {
+    public ResponseEntity<ApiResponse<List<WorkspaceResponse>>> getWorkspacesByOwner(@PathVariable long ownerId) {
         return ResponseEntity.ok(ApiResponse.success(workspaceService.getWorkspacesByOwner(ownerId)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<WorkspaceResponse>> updateWorkspace(@PathVariable UUID id, @Valid @RequestBody WorkspaceRequest request) {
+    public ResponseEntity<ApiResponse<WorkspaceResponse>> updateWorkspace(@PathVariable long id, @Valid @RequestBody WorkspaceRequest request) {
         WorkspaceResponse response = workspaceService.updateWorkspace(id, request);
         return ResponseEntity.ok(ApiResponse.success("Workspace updated successfully", response));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteWorkspace(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<Void>> deleteWorkspace(@PathVariable long id) {
         workspaceService.deleteWorkspace(id);
         return ResponseEntity.ok(ApiResponse.success("Workspace deleted successfully", null));
     }

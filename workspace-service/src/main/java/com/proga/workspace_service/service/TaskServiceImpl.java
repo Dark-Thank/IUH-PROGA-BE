@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,6 +22,7 @@ public class TaskServiceImpl implements TaskService {
     public TaskResponse createTask(TaskRequest request) {
         Task task = Task.builder()
                 .spaceId(request.getSpaceId())
+                .sprintId(request.getSprintId())
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .status(request.getStatus() != null ? request.getStatus() : TaskStatus.TODO)
@@ -37,32 +37,40 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TaskResponse getTaskById(UUID id) {
+    public TaskResponse getTaskById(long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
         return mapToResponse(task);
     }
 
     @Override
-    public List<TaskResponse> getTasksBySpace(UUID spaceId) {
+    public List<TaskResponse> getTasksBySpace(long spaceId) {
         return taskRepository.findBySpaceId(spaceId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<TaskResponse> getTasksByOwner(UUID ownerId) {
+    public List<TaskResponse> getTasksBySprint(long sprintId) {
+        return taskRepository.findBySprintId(sprintId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TaskResponse> getTasksByOwner(long ownerId) {
         return taskRepository.findByOwnerId(ownerId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public TaskResponse updateTask(UUID id, TaskRequest request) {
+    public TaskResponse updateTask(long id, TaskRequest request) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
 
         task.setTitle(request.getTitle());
+        task.setSprintId(request.getSprintId());
         task.setDescription(request.getDescription());
         if (request.getStatus() != null) task.setStatus(request.getStatus());
         if (request.getPriority() != null) task.setPriority(request.getPriority());
@@ -75,7 +83,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TaskResponse updateTaskStatus(UUID id, TaskStatus status) {
+    public TaskResponse updateTaskStatus(long id, TaskStatus status) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
         task.setStatus(status);
@@ -84,7 +92,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public void deleteTask(UUID id) {
+    public void deleteTask(long id) {
         if (!taskRepository.existsById(id)) {
             throw new RuntimeException("Task not found with id: " + id);
         }
@@ -95,6 +103,7 @@ public class TaskServiceImpl implements TaskService {
         return TaskResponse.builder()
                 .id(task.getId())
                 .spaceId(task.getSpaceId())
+                .sprintId(task.getSprintId())
                 .title(task.getTitle())
                 .description(task.getDescription())
                 .status(task.getStatus())

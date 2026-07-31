@@ -10,5 +10,5 @@ import java.util.UUID;
 public interface AuthService {
     UserResponse register(RegisterRequest request);
     AuthResponse login(LoginRequest request);
-    UserResponse getCurrentUser(UUID userId);
+    UserResponse getCurrentUser(long userId);
 }
