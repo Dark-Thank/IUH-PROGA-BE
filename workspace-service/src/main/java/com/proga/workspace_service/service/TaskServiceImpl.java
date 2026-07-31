@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,6 +22,7 @@ public class TaskServiceImpl implements TaskService {
     public TaskResponse createTask(TaskRequest request) {
         Task task = Task.builder()
                 .spaceId(request.getSpaceId())
+                .sprintId(request.getSprintId())
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .status(request.getStatus() != null ? request.getStatus() : TaskStatus.TODO)
@@ -51,6 +51,13 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    public List<TaskResponse> getTasksBySprint(long sprintId) {
+        return taskRepository.findBySprintId(sprintId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<TaskResponse> getTasksByOwner(long ownerId) {
         return taskRepository.findByOwnerId(ownerId).stream()
                 .map(this::mapToResponse)
@@ -63,6 +70,7 @@ public class TaskServiceImpl implements TaskService {
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
 
         task.setTitle(request.getTitle());
+        task.setSprintId(request.getSprintId());
         task.setDescription(request.getDescription());
         if (request.getStatus() != null) task.setStatus(request.getStatus());
         if (request.getPriority() != null) task.setPriority(request.getPriority());
@@ -95,6 +103,7 @@ public class TaskServiceImpl implements TaskService {
         return TaskResponse.builder()
                 .id(task.getId())
                 .spaceId(task.getSpaceId())
+                .sprintId(task.getSprintId())
                 .title(task.getTitle())
                 .description(task.getDescription())
                 .status(task.getStatus())
