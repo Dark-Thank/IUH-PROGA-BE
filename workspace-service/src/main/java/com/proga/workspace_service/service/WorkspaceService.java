@@ -14,6 +14,7 @@ public interface WorkspaceService {
     void inviteMember(long workspaceId, long userId, long roleId);
     void acceptInvitation(long workspaceId, long userId);
     void declineInvitation(long workspaceId, long userId);
+    List<com.proga.workspace_service.model.WorkspaceMember> getWorkspaceMembers(long workspaceId);
     WorkspaceResponse updateWorkspace(long id, WorkspaceRequest request);
     void deleteWorkspace(long id);
 }

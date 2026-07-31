@@ -133,6 +133,11 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     }
 
     @Override
+    public List<WorkspaceMember> getWorkspaceMembers(long workspaceId) {
+        return workspaceMemberRepository.findByIdWorkspaceId(workspaceId);
+    }
+
+    @Override
     public WorkspaceResponse updateWorkspace(long id, WorkspaceRequest request) {
         Workspace workspace = workspaceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Workspace not found with id: " + id));

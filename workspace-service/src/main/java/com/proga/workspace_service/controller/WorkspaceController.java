@@ -68,6 +68,11 @@ public class WorkspaceController {
         return ResponseEntity.ok(ApiResponse.success("Invitation declined successfully", null));
     }
 
+    @GetMapping("/{id}/members")
+    public ResponseEntity<ApiResponse<List<com.proga.workspace_service.model.WorkspaceMember>>> getWorkspaceMembers(@PathVariable long id) {
+        return ResponseEntity.ok(ApiResponse.success(workspaceService.getWorkspaceMembers(id)));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<WorkspaceResponse>> updateWorkspace(@PathVariable long id, @Valid @RequestBody WorkspaceRequest request) {
         WorkspaceResponse response = workspaceService.updateWorkspace(id, request);
