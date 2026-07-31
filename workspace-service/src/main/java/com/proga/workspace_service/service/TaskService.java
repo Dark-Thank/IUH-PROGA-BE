@@ -12,6 +12,7 @@ public interface TaskService {
     TaskResponse createTask(TaskRequest request);
     TaskResponse getTaskById(long id);
     List<TaskResponse> getTasksBySpace(long spaceId);
+    List<TaskResponse> getTasksBySprint(long sprintId);
     List<TaskResponse> getTasksByOwner(long ownerId);
     TaskResponse updateTask(long id, TaskRequest request);
     TaskResponse updateTaskStatus(long id, TaskStatus status);

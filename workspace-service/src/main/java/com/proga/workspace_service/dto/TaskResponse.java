@@ -15,6 +15,7 @@ import java.util.UUID;
 public class TaskResponse {
     private long id;
     private long spaceId;
+    private Long sprintId;
     private String title;
     private String description;
     private TaskStatus status;

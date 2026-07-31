@@ -47,18 +47,24 @@ INSERT INTO project_members (workspace_id, user_id, role_id, joined_at) VALUES
 (2, 3, 2, NOW())  -- pm_lananh là PM
 ON CONFLICT (workspace_id, user_id, role_id) DO NOTHING;
 
--- Chèn dữ liệu Spaces (Giai đoạn/Sprint)
+-- Chèn dữ liệu Spaces
 INSERT INTO spaces (id, workspace_id, name, start_date, end_date, created_at) VALUES 
-(1, 1, 'Sprint 1 - Foundation & Microservices Core', '2026-07-01 08:00:00', '2026-07-15 18:00:00', NOW()),
-(2, 1, 'Sprint 2 - Kanban Board & AI Agent Integration', '2026-07-16 08:00:00', '2026-07-31 18:00:00', NOW())
+(1, 1, 'Development Space 1', '2026-07-01 08:00:00', '2026-07-31 18:00:00', NOW()),
+(2, 1, 'Development Space 2', '2026-08-01 08:00:00', '2026-08-31 18:00:00', NOW())
+ON CONFLICT (id) DO NOTHING;
+
+-- Chèn dữ liệu Sprints (Giai đoạn Sprint trong Space)
+INSERT INTO sprints (id, space_id, name, goal, status, start_date, end_date, created_at) VALUES 
+(1, 1, 'PROGA Sprint 1', 'Foundation & Microservices Core', 'ACTIVE', '2026-07-01 08:00:00', '2026-07-15 18:00:00', NOW()),
+(2, 1, 'PROGA Sprint 2', 'Kanban Board & AI Agent Integration', 'FUTURE', '2026-07-16 08:00:00', '2026-07-31 18:00:00', NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Chèn dữ liệu Tasks (Các công việc)
-INSERT INTO tasks (id, space_id, title, description, status, priority, owner_id, start_date, due_date, created_at) VALUES 
-(1, 1, 'Thiết kế sơ đồ ERD & PostgreSQL Schema', 'Xác định các bảng users, workspaces, spaces, tasks và mối quan hệ giữa chúng.', 'DONE', 'HIGH', 2, '2026-07-01 08:00:00', '2026-07-05 18:00:00', NOW()),
-(2, 1, 'Xây dựng Auth-Service & Cấu hình Security JWT', 'Triển khai đăng ký, đăng nhập và cấp JWT Token cho toàn hệ thống.', 'IN_PROGRESS', 'URGENT', 4, '2026-07-06 08:00:00', '2026-07-12 18:00:00', NOW()),
-(3, 2, 'Xây dựng Giao diện Kanban Board kéo thả', 'Triển khai bảng Kanban trên Web Frontend dùng Next.js & Tailwind CSS.', 'TODO', 'MEDIUM', 4, '2026-07-16 08:00:00', '2026-07-22 18:00:00', NOW()),
-(4, 2, 'Tích hợp Requirement Agent tự động phân rã Task', 'Gọi OpenAI Assistant API để tự động gợi ý danh sách task nhỏ từ yêu cầu bài toán.', 'TODO', 'HIGH', 5, '2026-07-23 08:00:00', '2026-07-30 18:00:00', NOW())
+INSERT INTO tasks (id, space_id, sprint_id, title, description, status, priority, owner_id, start_date, due_date, created_at) VALUES 
+(1, 1, 1, 'Thiết kế sơ đồ ERD & PostgreSQL Schema', 'Xác định các bảng users, workspaces, spaces, sprints, tasks và mối quan hệ giữa chúng.', 'DONE', 'HIGH', 2, '2026-07-01 08:00:00', '2026-07-05 18:00:00', NOW()),
+(2, 1, 1, 'Xây dựng Auth-Service & Cấu hình Security JWT', 'Triển khai đăng ký, đăng nhập và cấp JWT Token cho toàn hệ thống.', 'IN_PROGRESS', 'URGENT', 4, '2026-07-06 08:00:00', '2026-07-12 18:00:00', NOW()),
+(3, 1, 2, 'Xây dựng Giao diện Kanban Board kéo thả', 'Triển khai bảng Kanban trên Web Frontend dùng Next.js & Tailwind CSS.', 'TODO', 'MEDIUM', 4, '2026-07-16 08:00:00', '2026-07-22 18:00:00', NOW()),
+(4, 1, 2, 'Tích hợp Requirement Agent tự động phân rã Task', 'Gọi OpenAI Assistant API để tự động gợi ý danh sách task nhỏ từ yêu cầu bài toán.', 'TODO', 'HIGH', 5, '2026-07-23 08:00:00', '2026-07-30 18:00:00', NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Chèn dữ liệu Task Notes (Ghi chú/Bình luận trên Task)
@@ -75,6 +81,7 @@ ON CONFLICT (id) DO NOTHING;
 -- Reset sequences cho proga_workspace_db để tránh lỗi trùng khóa khi insert tự động sau này
 SELECT setval(pg_get_serial_sequence('workspaces', 'id'), COALESCE(MAX(id), 1)) FROM workspaces;
 SELECT setval(pg_get_serial_sequence('spaces', 'id'), COALESCE(MAX(id), 1)) FROM spaces;
+SELECT setval(pg_get_serial_sequence('sprints', 'id'), COALESCE(MAX(id), 1)) FROM sprints;
 SELECT setval(pg_get_serial_sequence('tasks', 'id'), COALESCE(MAX(id), 1)) FROM tasks;
 SELECT setval(pg_get_serial_sequence('task_notes', 'id'), COALESCE(MAX(id), 1)) FROM task_notes;
 SELECT setval(pg_get_serial_sequence('workspace_logs', 'id'), COALESCE(MAX(id), 1)) FROM workspace_logs;

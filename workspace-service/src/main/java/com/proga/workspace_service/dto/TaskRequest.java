@@ -19,6 +19,8 @@ public class TaskRequest {
     @NotNull(message = "Space ID is required")
     private long spaceId;
 
+    private Long sprintId;
+
     @NotBlank(message = "Task title cannot be blank")
     private String title;
 

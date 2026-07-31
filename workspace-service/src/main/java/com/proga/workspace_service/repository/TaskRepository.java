@@ -12,6 +12,7 @@ import java.util.UUID;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findBySpaceId(long spaceId);
+    List<Task> findBySprintId(Long sprintId);
     List<Task> findByOwnerId(long ownerId);
     List<Task> findBySpaceIdAndStatus(long spaceId, TaskStatus status);
     List<Task> findBySpaceIdAndPriority(long spaceId, Priority priority);

@@ -5,16 +5,15 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
-@Table(name = "tasks")
+@Table(name = "sprints")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Task {
+public class Sprint {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,31 +22,21 @@ public class Task {
     @Column(name = "space_id", nullable = false)
     private long spaceId;
 
-    @Column(name = "sprint_id")
-    private Long sprintId;
+    @Column(name = "name", nullable = false, length = 100)
+    private String name;
 
-    @Column(name = "title", nullable = false, length = 150)
-    private String title;
-
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
+    @Column(name = "goal", columnDefinition = "TEXT")
+    private String goal;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", length = 20)
-    private TaskStatus status;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "priority", length = 10)
-    private Priority priority;
-
-    @Column(name = "owner_id")
-    private Long ownerId;
+    @Column(name = "status", nullable = false, length = 20)
+    private SprintStatus status;
 
     @Column(name = "start_date")
     private LocalDateTime startDate;
 
-    @Column(name = "due_date")
-    private LocalDateTime dueDate;
+    @Column(name = "end_date")
+    private LocalDateTime endDate;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

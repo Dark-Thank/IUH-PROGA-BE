@@ -36,6 +36,11 @@ public class TaskController {
         return ResponseEntity.ok(ApiResponse.success(taskService.getTasksBySpace(spaceId)));
     }
 
+    @GetMapping("/sprint/{sprintId}")
+    public ResponseEntity<ApiResponse<List<TaskResponse>>> getTasksBySprint(@PathVariable long sprintId) {
+        return ResponseEntity.ok(ApiResponse.success(taskService.getTasksBySprint(sprintId)));
+    }
+
     @GetMapping("/owner/{ownerId}")
     public ResponseEntity<ApiResponse<List<TaskResponse>>> getTasksByOwner(@PathVariable long ownerId) {
         return ResponseEntity.ok(ApiResponse.success(taskService.getTasksByOwner(ownerId)));
