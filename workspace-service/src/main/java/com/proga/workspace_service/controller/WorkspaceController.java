@@ -35,6 +35,44 @@ public class WorkspaceController {
         return ResponseEntity.ok(ApiResponse.success(workspaceService.getWorkspacesByOwner(ownerId)));
     }
 
+    @GetMapping("/user/{userId}/classified")
+    public ResponseEntity<ApiResponse<com.proga.workspace_service.dto.ClassifiedWorkspacesResponse>> getClassifiedWorkspaces(@PathVariable long userId) {
+        return ResponseEntity.ok(ApiResponse.success(workspaceService.getClassifiedWorkspaces(userId)));
+    }
+
+    @PostMapping("/{id}/invite")
+    public ResponseEntity<ApiResponse<Void>> inviteMember(
+            @PathVariable long id,
+            @RequestParam long userId,
+            @RequestParam(defaultValue = "3") long roleId
+    ) {
+        workspaceService.inviteMember(id, userId, roleId);
+        return ResponseEntity.ok(ApiResponse.success("Member invited successfully", null));
+    }
+
+    @PutMapping("/{id}/invitations/accept")
+    public ResponseEntity<ApiResponse<Void>> acceptInvitation(
+            @PathVariable long id,
+            @RequestParam long userId
+    ) {
+        workspaceService.acceptInvitation(id, userId);
+        return ResponseEntity.ok(ApiResponse.success("Invitation accepted successfully", null));
+    }
+
+    @PutMapping("/{id}/invitations/decline")
+    public ResponseEntity<ApiResponse<Void>> declineInvitation(
+            @PathVariable long id,
+            @RequestParam long userId
+    ) {
+        workspaceService.declineInvitation(id, userId);
+        return ResponseEntity.ok(ApiResponse.success("Invitation declined successfully", null));
+    }
+
+    @GetMapping("/{id}/members")
+    public ResponseEntity<ApiResponse<List<com.proga.workspace_service.model.WorkspaceMember>>> getWorkspaceMembers(@PathVariable long id) {
+        return ResponseEntity.ok(ApiResponse.success(workspaceService.getWorkspaceMembers(id)));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<WorkspaceResponse>> updateWorkspace(@PathVariable long id, @Valid @RequestBody WorkspaceRequest request) {
         WorkspaceResponse response = workspaceService.updateWorkspace(id, request);

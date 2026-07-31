@@ -22,7 +22,12 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(userService.getAllUsers()));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> searchUsers(@RequestParam(required = false) String query) {
+        return ResponseEntity.ok(ApiResponse.success(userService.searchUsers(query)));
+    }
+
+    @GetMapping("/{id:\\d+}")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable long id) {
         return ResponseEntity.ok(ApiResponse.success(userService.getUserById(id)));
     }
