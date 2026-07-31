@@ -9,7 +9,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="eureka-server" />
       </profile>
-      <profile name="Annotation profile for ai-service" enabled="true">
+      <profile name="Annotation profile for notification-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -19,8 +19,8 @@
         <module name="api-gateway" />
         <module name="auth-service" />
         <module name="workspace-service" />
-        <module name="ai-service" />
         <module name="notification-service" />
+        <module name="ai-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
