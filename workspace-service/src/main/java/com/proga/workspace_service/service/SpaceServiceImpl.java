@@ -11,11 +11,16 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.proga.workspace_service.model.Sprint;
+import com.proga.workspace_service.model.SprintStatus;
+import com.proga.workspace_service.repository.SprintRepository;
+
 @Service
 @RequiredArgsConstructor
 public class SpaceServiceImpl implements SpaceService {
 
     private final SpaceRepository spaceRepository;
+    private final SprintRepository sprintRepository;
 
     @Override
     public SpaceResponse createSpace(SpaceRequest request) {
@@ -31,6 +36,18 @@ public class SpaceServiceImpl implements SpaceService {
                 .build();
 
         Space saved = spaceRepository.save(space);
+
+        // Mặc định tự tạo 1 Sprint tên "Sprint 0" cho Space mới
+        Sprint defaultSprint = Sprint.builder()
+                .spaceId(saved.getId())
+                .name("Sprint 1")
+                .goal("Sprint khởi tạo mặc định cho Space " + saved.getName())
+                .status(SprintStatus.ACTIVE)
+                .startDate(saved.getStartDate())
+                .endDate(saved.getEndDate())
+                .build();
+        sprintRepository.save(defaultSprint);
+
         return mapToResponse(saved);
     }
 

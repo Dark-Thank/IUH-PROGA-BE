@@ -55,8 +55,8 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Chèn dữ liệu Sprints (Giai đoạn Sprint trong Space)
 INSERT INTO sprints (id, space_id, name, goal, status, start_date, end_date, created_at) VALUES 
-(1, 1, 'PROGA Sprint 1', 'Foundation & Microservices Core', 'ACTIVE', '2026-07-01 08:00:00', '2026-07-15 18:00:00', NOW()),
-(2, 1, 'PROGA Sprint 2', 'Kanban Board & AI Agent Integration', 'FUTURE', '2026-07-16 08:00:00', '2026-07-31 18:00:00', NOW())
+(1, 1, 'Sprint 1', 'Foundation & Microservices Core', 'ACTIVE', '2026-07-01 08:00:00', '2026-07-15 18:00:00', NOW()),
+(2, 1, 'Sprint 2', 'Kanban Board & AI Agent Integration', 'FUTURE', '2026-07-16 08:00:00', '2026-07-31 18:00:00', NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Chèn dữ liệu Tasks (Các công việc)
