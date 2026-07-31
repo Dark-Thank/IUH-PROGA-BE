@@ -32,6 +32,10 @@ public class Space {
     @Column(name = "end_date")
     private LocalDateTime endDate;
 
+    @OneToMany(mappedBy = "space", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<SpaceMember> members = new java.util.ArrayList<>();
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
