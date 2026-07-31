@@ -16,5 +16,6 @@ public class SpaceResponse {
     private String name;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
+    private Boolean isPrivate;
     private LocalDateTime createdAt;
 }

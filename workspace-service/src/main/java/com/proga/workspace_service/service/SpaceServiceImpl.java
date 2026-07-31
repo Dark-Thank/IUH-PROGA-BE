@@ -33,11 +33,12 @@ public class SpaceServiceImpl implements SpaceService {
                 .name(request.getName())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
+                .isPrivate(request.getIsPrivate() != null ? request.getIsPrivate() : false)
                 .build();
 
         Space saved = spaceRepository.save(space);
 
-        // Mặc định tự tạo 1 Sprint tên "Sprint 0" cho Space mới
+        // Mặc định tự tạo 1 Sprint tên "Sprint 1" cho Space mới
         Sprint defaultSprint = Sprint.builder()
                 .spaceId(saved.getId())
                 .name("Sprint 1")
@@ -73,6 +74,7 @@ public class SpaceServiceImpl implements SpaceService {
         space.setName(request.getName());
         space.setStartDate(request.getStartDate());
         space.setEndDate(request.getEndDate());
+        if (request.getIsPrivate() != null) space.setIsPrivate(request.getIsPrivate());
 
         Space updated = spaceRepository.save(space);
         return mapToResponse(updated);
@@ -93,6 +95,7 @@ public class SpaceServiceImpl implements SpaceService {
                 .name(space.getName())
                 .startDate(space.getStartDate())
                 .endDate(space.getEndDate())
+                .isPrivate(space.getIsPrivate())
                 .createdAt(space.getCreatedAt())
                 .build();
     }

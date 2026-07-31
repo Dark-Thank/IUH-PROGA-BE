@@ -28,6 +28,10 @@ public class WorkspaceMember {
     @Column(name = "role_id", nullable = false)
     private Long roleId;
 
+    @Builder.Default
+    @Column(name = "status", length = 20, nullable = false)
+    private String status = "ACCEPTED";
+
     @CreationTimestamp
     @Column(name = "joined_at", updatable = false)
     private LocalDateTime joinedAt;

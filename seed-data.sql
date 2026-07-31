@@ -16,13 +16,13 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Chèn 7 Users với thông tin hồ sơ chi tiết (Mật khẩu mặc định: password123)
 INSERT INTO users (id, username, email, password, avatar_url, phone_number, full_name, display_name, job_title, bio, is_admin, created_at) VALUES 
-(1, 'admin_user', 'admin@proga.iuh.edu.vn', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin', '0901234567', 'Hệ Thống Admin', 'Quản Trị Viên', 'System Administrator', 'Quản trị viên hệ thống IUH-PROGA', true, NOW()),
-(2, 'pm_sonluu', 'sonluu@proga.iuh.edu.vn', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'https://api.dicebear.com/7.x/avataaars/svg?seed=sonluu', '0912345678', 'Sơn Lưu', 'Sơn Lưu (PM)', 'Project Manager', 'Quản lý dự án KLTN IUH-PROGA', false, NOW()),
-(3, 'pm_lananh', 'lananh@proga.iuh.edu.vn', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'https://api.dicebear.com/7.x/avataaars/svg?seed=lananh', '0923456789', 'Lân Anh', 'Lan Anh (PM)', 'Scrum Master', 'Quản lý dự án E-Commerce', false, NOW()),
-(4, 'dev_duy', 'duy@proga.iuh.edu.vn', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'https://api.dicebear.com/7.x/avataaars/svg?seed=duy', '0934567890', 'Trần Duy', 'Duy Dev', 'Fullstack Developer', 'Lập trình viên React & Java', false, NOW()),
-(5, 'tester_hoa', 'hoa@proga.iuh.edu.vn', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'https://api.dicebear.com/7.x/avataaars/svg?seed=hoa', '0945678901', 'Nguyễn Hòa', 'Hoa Tester', 'QA Engineer', 'Kỹ sư kiểm thử chất lượng phần mềm', false, NOW()),
-(6, 'dev_minhtri', 'tri@proga.iuh.edu.vn', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'https://api.dicebear.com/7.x/avataaars/svg?seed=minhtri', '0956789012', 'Vũ Minh Trí', 'Trí Backend', 'Backend Developer', 'Lập trình viên Java Spring Boot Microservices', false, NOW()),
-(7, 'ba_tuan', 'tuan@proga.iuh.edu.vn', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'https://api.dicebear.com/7.x/avataaars/svg?seed=batuan', '0967890123', 'Lê Anh Tuấn', 'Tuấn BA', 'Business Analyst', 'Chuyên viên phân tích yêu cầu nghiệp vụ', false, NOW())
+(1, 'admin_user', 'admin@proga.iuh.edu.vn', '$2a$10$QUC2khs76FWt7FUpdiDX1.09bAEuyQ4ptkdcrQwYqx.ec4ZEqgWvS', 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin', '0901234567', 'Hệ Thống Admin', 'Quản Trị Viên', 'System Administrator', 'Quản trị viên hệ thống IUH-PROGA', true, NOW()),
+(2, 'pm_sonluu', 'sonluu@proga.iuh.edu.vn', '$2a$10$QUC2khs76FWt7FUpdiDX1.09bAEuyQ4ptkdcrQwYqx.ec4ZEqgWvS', 'https://api.dicebear.com/7.x/avataaars/svg?seed=sonluu', '0912345678', 'Sơn Lưu', 'Sơn Lưu (PM)', 'Project Manager', 'Quản lý dự án KLTN IUH-PROGA', false, NOW()),
+(3, 'pm_lananh', 'lananh@proga.iuh.edu.vn', '$2a$10$QUC2khs76FWt7FUpdiDX1.09bAEuyQ4ptkdcrQwYqx.ec4ZEqgWvS', 'https://api.dicebear.com/7.x/avataaars/svg?seed=lananh', '0923456789', 'Lân Anh', 'Lan Anh (PM)', 'Scrum Master', 'Quản lý dự án E-Commerce', false, NOW()),
+(4, 'dev_duy', 'duy@proga.iuh.edu.vn', '$2a$10$QUC2khs76FWt7FUpdiDX1.09bAEuyQ4ptkdcrQwYqx.ec4ZEqgWvS', 'https://api.dicebear.com/7.x/avataaars/svg?seed=duy', '0934567890', 'Trần Duy', 'Duy Dev', 'Fullstack Developer', 'Lập trình viên React & Java', false, NOW()),
+(5, 'tester_hoa', 'hoa@proga.iuh.edu.vn', '$2a$10$QUC2khs76FWt7FUpdiDX1.09bAEuyQ4ptkdcrQwYqx.ec4ZEqgWvS', 'https://api.dicebear.com/7.x/avataaars/svg?seed=hoa', '0945678901', 'Nguyễn Hòa', 'Hoa Tester', 'QA Engineer', 'Kỹ sư kiểm thử chất lượng phần mềm', false, NOW()),
+(6, 'dev_minhtri', 'tri@proga.iuh.edu.vn', '$2a$10$QUC2khs76FWt7FUpdiDX1.09bAEuyQ4ptkdcrQwYqx.ec4ZEqgWvS', 'https://api.dicebear.com/7.x/avataaars/svg?seed=minhtri', '0956789012', 'Vũ Minh Trí', 'Trí Backend', 'Backend Developer', 'Lập trình viên Java Spring Boot Microservices', false, NOW()),
+(7, 'ba_tuan', 'tuan@proga.iuh.edu.vn', '$2a$10$QUC2khs76FWt7FUpdiDX1.09bAEuyQ4ptkdcrQwYqx.ec4ZEqgWvS', 'https://api.dicebear.com/7.x/avataaars/svg?seed=batuan', '0967890123', 'Lê Anh Tuấn', 'Tuấn BA', 'Business Analyst', 'Chuyên viên phân tích yêu cầu nghiệp vụ', false, NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Reset sequences cho proga_auth_db
@@ -44,25 +44,25 @@ INSERT INTO workspaces (id, name, description, owner_id, created_at) VALUES
 (5, 'Dự Án HRM Quản Nhân Sự', 'Hệ thống quản lý nguồn nhân lực và chấm công thông minh', 2, NOW())
 ON CONFLICT (id) DO NOTHING;
 
--- Chèn 8 Workspace Members (Bảng workspace_members)
-INSERT INTO workspace_members (workspace_id, user_id, role_id, joined_at) VALUES 
-(1, 2, 2, NOW()), -- pm_sonluu (PM)
-(1, 4, 3, NOW()), -- dev_duy (MEMBER)
-(1, 5, 3, NOW()), -- tester_hoa (MEMBER)
-(1, 6, 3, NOW()), -- dev_minhtri (MEMBER)
-(1, 7, 3, NOW()), -- ba_tuan (MEMBER)
-(2, 3, 2, NOW()), -- pm_lananh (PM)
-(2, 4, 3, NOW()), -- dev_duy (MEMBER)
-(2, 6, 3, NOW())  -- dev_minhtri (MEMBER)
+-- Chèn 8 Workspace Members (Bảng workspace_members) với trạng thái ACCEPTED & PENDING
+INSERT INTO workspace_members (workspace_id, user_id, role_id, status, joined_at) VALUES 
+(1, 2, 2, 'ACCEPTED', NOW()), -- pm_sonluu (PM/Owner)
+(1, 4, 3, 'ACCEPTED', NOW()), -- dev_duy (MEMBER ACCEPTED)
+(1, 5, 3, 'ACCEPTED', NOW()), -- tester_hoa (MEMBER ACCEPTED)
+(1, 6, 3, 'PENDING', NOW()),  -- dev_minhtri (LỜI MỜI PENDING)
+(1, 7, 3, 'PENDING', NOW()),  -- ba_tuan (LỜI MỜI PENDING)
+(2, 3, 2, 'ACCEPTED', NOW()), -- pm_lananh (PM/Owner)
+(2, 4, 3, 'ACCEPTED', NOW()), -- dev_duy (MEMBER ACCEPTED)
+(2, 6, 3, 'PENDING', NOW())   -- dev_minhtri (LỜI MỜI PENDING)
 ON CONFLICT (workspace_id, user_id) DO NOTHING;
 
--- Chèn 5 Spaces mẫu
-INSERT INTO spaces (id, workspace_id, name, start_date, end_date, created_at) VALUES 
-(1, 1, 'Development Space 1', '2026-07-01 08:00:00', '2026-07-31 18:00:00', NOW()),
-(2, 1, 'Development Space 2', '2026-08-01 08:00:00', '2026-08-31 18:00:00', NOW()),
-(3, 1, 'AI Research & R&D Space', '2026-09-01 08:00:00', '2026-09-30 18:00:00', NOW()),
-(4, 2, 'Backend Services Space', '2026-07-01 08:00:00', '2026-07-31 18:00:00', NOW()),
-(5, 2, 'UI/UX Design System Space', '2026-08-01 08:00:00', '2026-08-31 18:00:00', NOW())
+-- Chèn 5 Spaces mẫu (Space 3 là Private `is_private = true`)
+INSERT INTO spaces (id, workspace_id, name, start_date, end_date, is_private, created_at) VALUES 
+(1, 1, 'Development Space 1', '2026-07-01 08:00:00', '2026-07-31 18:00:00', false, NOW()),
+(2, 1, 'Development Space 2', '2026-08-01 08:00:00', '2026-08-31 18:00:00', false, NOW()),
+(3, 1, 'AI Research & R&D Space (Private)', '2026-09-01 08:00:00', '2026-09-30 18:00:00', true, NOW()),
+(4, 2, 'Backend Services Space', '2026-07-01 08:00:00', '2026-07-31 18:00:00', false, NOW()),
+(5, 2, 'UI/UX Design System Space', '2026-08-01 08:00:00', '2026-08-31 18:00:00', false, NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- Chèn 8 Space Members (Bảng space_members)
