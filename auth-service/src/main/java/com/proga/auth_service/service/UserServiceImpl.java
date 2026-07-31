@@ -30,11 +30,27 @@ public class UserServiceImpl implements UserService {
         return mapToResponse(user);
     }
 
+    @Override
+    public List<UserResponse> searchUsers(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return getAllUsers();
+        }
+        return userRepository.searchUsers(query.trim()).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private UserResponse mapToResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .avatarUrl(user.getAvatarUrl())
+                .phoneNumber(user.getPhoneNumber())
+                .fullName(user.getFullName())
+                .displayName(user.getDisplayName())
+                .jobTitle(user.getJobTitle())
+                .bio(user.getBio())
                 .isAdmin(user.getIsAdmin())
                 .createdAt(user.getCreatedAt())
                 .build();

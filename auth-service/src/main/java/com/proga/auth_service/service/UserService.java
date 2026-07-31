@@ -8,4 +8,5 @@ import java.util.UUID;
 public interface UserService {
     List<UserResponse> getAllUsers();
     UserResponse getUserById(long id);
+    List<UserResponse> searchUsers(String query);
 }
