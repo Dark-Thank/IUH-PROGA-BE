@@ -29,6 +29,24 @@ public class User {
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
+    @Column(name = "avatar_url", length = 225)
+    private String avatarUrl;
+
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+
+    @Column(name = "full_name", length = 100)
+    private String fullName;
+
+    @Column(name = "display_name", length = 100)
+    private String displayName;
+
+    @Column(name = "job_title", length = 100)
+    private String jobTitle;
+
+    @Column(name = "bio", columnDefinition = "TEXT")
+    private String bio;
+
     @Builder.Default
     @Column(name = "is_admin", nullable = false)
     private Boolean isAdmin = false;
