@@ -29,6 +29,10 @@ public class Workspace {
     @Column(name = "owner_id", nullable = false)
     private long ownerId;
 
+    @OneToMany(mappedBy = "workspace", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<WorkspaceMember> members = new java.util.ArrayList<>();
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

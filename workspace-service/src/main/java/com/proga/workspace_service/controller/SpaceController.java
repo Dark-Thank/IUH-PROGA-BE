@@ -31,8 +31,11 @@ public class SpaceController {
     }
 
     @GetMapping("/workspace/{workspaceId}")
-    public ResponseEntity<ApiResponse<List<SpaceResponse>>> getSpacesByWorkspace(@PathVariable long workspaceId) {
-        return ResponseEntity.ok(ApiResponse.success(spaceService.getSpacesByWorkspace(workspaceId)));
+    public ResponseEntity<ApiResponse<List<SpaceResponse>>> getSpacesByWorkspace(
+            @PathVariable long workspaceId,
+            @RequestParam(required = false) Long userId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(spaceService.getSpacesByWorkspace(workspaceId, userId)));
     }
 
     @PutMapping("/{id}")
