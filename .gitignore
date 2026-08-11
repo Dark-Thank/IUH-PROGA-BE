@@ -1,0 +1,15 @@
+# Git ignore for Spring Boot & Docker environment
+.env
+.env.local
+.env.development
+.env.production
+!.env.example
+
+# IDE & Build outputs
+target/
+.idea/
+*.iml
+.mvn/
+mvnw
+mvnw.cmd
+.DS_Store
