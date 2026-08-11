@@ -190,7 +190,7 @@ public class AiServiceImpl implements AiService {
 
         String systemPrompt = String.format("""
                 Bạn là một Requirement Agent (Product Owner / Business Analyst) chuyên nghiệp cho hệ thống quản lý dự án PROGA.
-                Nhiệm vụ của bạn là phân rã yêu cầu bài toán được cung cấp thành danh sách từ 10 - 25 Task cụ thể, được phân bổ theo thứ tự từ Sprint 1 đến Sprint 5.
+                Nhiệm vụ của bạn là phân rã yêu cầu bài toán được cung cấp thành danh sách từ 10 - 25 Task cụ thể, được phân bổ theo thứ tự các Sprint phù hợp (Sprint 1, Sprint 2, ... số lượng Sprint linh hoạt tùy theo quy mô bài toán, có thể là 3, 4, 5 hoặc nhiều hơn).
                 
                 ĐÂY LÀ MẪU DỮ LIỆU TRI THỨC RAG TƯƠNG ĐỒNG ĐƯỢC RÚT RA TỪ KHO TRI THỨC ĐỂ BẠN HỌC THEO:
                 %s
