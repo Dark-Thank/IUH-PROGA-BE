@@ -6,15 +6,15 @@ services:
     image: postgres:16-alpine
     container_name: proga-postgres
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT_HOST:-5433}:5432"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123456
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123456}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,7 +24,7 @@ services:
     image: redis:alpine
     container_name: proga-redis
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT_HOST:-6379}:6379"
     volumes:
       - redis_data:/data
 
@@ -35,7 +35,7 @@ services:
       dockerfile: Dockerfile
     container_name: proga-eureka-server
     ports:
-      - "8761:8761"
+      - "${EUREKA_PORT:-8761}:8761"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
 
@@ -46,9 +46,9 @@ services:
       dockerfile: Dockerfile
     container_name: proga-api-gateway
     ports:
-      - "8080:8080"
+      - "${GATEWAY_PORT:-8080}:8080"
     environment:
-      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - EUREKA_SERVER_URL=${EUREKA_SERVER_URL:-http://eureka-server:8761/eureka/}
     depends_on:
       - eureka-server
 
@@ -59,12 +59,13 @@ services:
       dockerfile: Dockerfile
     container_name: proga-auth-service
     ports:
-      - "8081:8081"
+      - "${AUTH_SERVICE_PORT:-8081}:8081"
     environment:
-      - DB_URL=jdbc:postgresql://postgres:5432/proga_auth_db
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=123456
-      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - DB_URL=jdbc:postgresql://${POSTGRES_HOST:-postgres}:5432/proga_auth_db
+      - DB_USERNAME=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-123456}
+      - EUREKA_SERVER_URL=${EUREKA_SERVER_URL:-http://eureka-server:8761/eureka/}
+      - JWT_SECRET=${JWT_SECRET:-9a4f2c8d7e1b3a5c7e9f2a4b6c8d1e3f5a7b9c1d3e5f7a9b2c4d6e8f1a3b5c7e}
     depends_on:
       postgres:
         condition: service_healthy
@@ -78,14 +79,14 @@ services:
       dockerfile: Dockerfile
     container_name: proga-workspace-service
     ports:
-      - "8082:8082"
+      - "${WORKSPACE_SERVICE_PORT:-8082}:8082"
     environment:
-      - DB_URL=jdbc:postgresql://postgres:5432/proga_workspace_db
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=123456
-      - SPRING_REDIS_HOST=redis
+      - DB_URL=jdbc:postgresql://${POSTGRES_HOST:-postgres}:5432/proga_workspace_db
+      - DB_USERNAME=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-123456}
+      - SPRING_REDIS_HOST=${REDIS_HOST:-redis}
       - SPRING_REDIS_PORT=6379
-      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - EUREKA_SERVER_URL=${EUREKA_SERVER_URL:-http://eureka-server:8761/eureka/}
     depends_on:
       postgres:
         condition: service_healthy
@@ -101,12 +102,13 @@ services:
       dockerfile: Dockerfile
     container_name: proga-ai-service
     ports:
-      - "8083:8083"
+      - "${AI_SERVICE_PORT:-8083}:8083"
     environment:
-      - DB_URL=jdbc:postgresql://postgres:5432/proga_ai_db
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=123456
-      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - DB_URL=jdbc:postgresql://${POSTGRES_HOST:-postgres}:5432/proga_ai_db
+      - DB_USERNAME=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-123456}
+      - EUREKA_SERVER_URL=${EUREKA_SERVER_URL:-http://eureka-server:8761/eureka/}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -120,12 +122,12 @@ services:
       dockerfile: Dockerfile
     container_name: proga-notification-service
     ports:
-      - "8084:8084"
+      - "${NOTIFICATION_SERVICE_PORT:-8084}:8084"
     environment:
-      - DB_URL=jdbc:postgresql://postgres:5432/proga_notification_db
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=123456
-      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - DB_URL=jdbc:postgresql://${POSTGRES_HOST:-postgres}:5432/proga_notification_db
+      - DB_USERNAME=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-123456}
+      - EUREKA_SERVER_URL=${EUREKA_SERVER_URL:-http://eureka-server:8761/eureka/}
     depends_on:
       postgres:
         condition: service_healthy

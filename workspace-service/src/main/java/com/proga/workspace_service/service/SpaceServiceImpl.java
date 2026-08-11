@@ -3,12 +3,16 @@ package com.proga.workspace_service.service;
 import com.proga.workspace_service.dto.SpaceRequest;
 import com.proga.workspace_service.dto.SpaceResponse;
 import com.proga.workspace_service.model.Space;
+import com.proga.workspace_service.model.Sprint;
+import com.proga.workspace_service.model.SprintStatus;
+import com.proga.workspace_service.repository.SpaceMemberRepository;
 import com.proga.workspace_service.repository.SpaceRepository;
+import com.proga.workspace_service.repository.SprintRepository;
+import com.proga.workspace_service.repository.WorkspaceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -16,6 +20,9 @@ import java.util.stream.Collectors;
 public class SpaceServiceImpl implements SpaceService {
 
     private final SpaceRepository spaceRepository;
+    private final SprintRepository sprintRepository;
+    private final SpaceMemberRepository spaceMemberRepository;
+    private final WorkspaceRepository workspaceRepository;
 
     @Override
     public SpaceResponse createSpace(SpaceRequest request) {
@@ -28,9 +35,22 @@ public class SpaceServiceImpl implements SpaceService {
                 .name(request.getName())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
+                .isPrivate(request.getIsPrivate() != null ? request.getIsPrivate() : false)
                 .build();
 
         Space saved = spaceRepository.save(space);
+
+        // Mặc định tự tạo 1 Sprint tên "Sprint 1" cho Space mới
+        Sprint defaultSprint = Sprint.builder()
+                .spaceId(saved.getId())
+                .name("Sprint 1")
+                .goal("Sprint khởi tạo mặc định cho Space " + saved.getName())
+                .status(SprintStatus.ACTIVE)
+                .startDate(saved.getStartDate())
+                .endDate(saved.getEndDate())
+                .build();
+        sprintRepository.save(defaultSprint);
+
         return mapToResponse(saved);
     }
 
@@ -43,7 +63,38 @@ public class SpaceServiceImpl implements SpaceService {
 
     @Override
     public List<SpaceResponse> getSpacesByWorkspace(long workspaceId) {
-        return spaceRepository.findByWorkspaceId(workspaceId).stream()
+        return getSpacesByWorkspace(workspaceId, null);
+    }
+
+    @Override
+    public List<SpaceResponse> getSpacesByWorkspace(long workspaceId, Long userId) {
+        List<Space> allSpaces = spaceRepository.findByWorkspaceId(workspaceId);
+
+        if (userId == null) {
+            // Default filter out private spaces when no userId is passed
+            return allSpaces.stream()
+                    .filter(s -> s.getIsPrivate() == null || !s.getIsPrivate())
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+        }
+
+        // Check if user is Workspace Owner
+        boolean isOwner = workspaceRepository.findById(workspaceId)
+                .map(w -> w.getOwnerId() == userId)
+                .orElse(false);
+
+        if (isOwner) {
+            // Owner sees all spaces
+            return allSpaces.stream().map(this::mapToResponse).collect(Collectors.toList());
+        }
+
+        // Get user's space memberships
+        List<Long> memberSpaceIds = spaceMemberRepository.findByIdUserId(userId).stream()
+                .map(sm -> sm.getId().getSpaceId())
+                .collect(Collectors.toList());
+
+        return allSpaces.stream()
+                .filter(s -> s.getIsPrivate() == null || !s.getIsPrivate() || memberSpaceIds.contains(s.getId()))
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -56,6 +107,7 @@ public class SpaceServiceImpl implements SpaceService {
         space.setName(request.getName());
         space.setStartDate(request.getStartDate());
         space.setEndDate(request.getEndDate());
+        if (request.getIsPrivate() != null) space.setIsPrivate(request.getIsPrivate());
 
         Space updated = spaceRepository.save(space);
         return mapToResponse(updated);
@@ -76,6 +128,7 @@ public class SpaceServiceImpl implements SpaceService {
                 .name(space.getName())
                 .startDate(space.getStartDate())
                 .endDate(space.getEndDate())
+                .isPrivate(space.getIsPrivate())
                 .createdAt(space.getCreatedAt())
                 .build();
     }

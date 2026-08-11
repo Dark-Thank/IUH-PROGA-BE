@@ -5,7 +5,6 @@ import jakarta.persistence.Embeddable;
 import lombok.*;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 @Embeddable
 @Getter
@@ -14,14 +13,11 @@ import java.util.UUID;
 @AllArgsConstructor
 @EqualsAndHashCode
 @Builder
-public class ProjectMemberId implements Serializable {
+public class WorkspaceMemberId implements Serializable {
 
     @Column(name = "workspace_id", nullable = false)
     private long workspaceId;
 
     @Column(name = "user_id", nullable = false)
     private long userId;
-
-    @Column(name = "role_id", nullable = false)
-    private Long roleId;
 }

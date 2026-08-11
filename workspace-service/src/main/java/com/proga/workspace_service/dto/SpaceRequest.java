@@ -22,4 +22,5 @@ public class SpaceRequest {
 
     private LocalDateTime startDate;
     private LocalDateTime endDate;
+    private Boolean isPrivate;
 }
