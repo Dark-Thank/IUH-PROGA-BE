@@ -20,6 +20,7 @@ public class TaskDecompositionResponse {
     @AllArgsConstructor
     @Builder
     public static class DecomposedTaskItem {
+        private String sprint; // e.g. Sprint 1, Sprint 2, Sprint 3
         private String title;
         private String description;
         private String priority; // LOW, MEDIUM, HIGH, URGENT
