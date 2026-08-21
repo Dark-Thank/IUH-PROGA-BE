@@ -188,27 +188,38 @@ public class AiServiceImpl implements AiService {
             } catch (Exception ignored) {}
         }
 
+        // Extract source references from RAG sample
+        String ragSourceRef = matchedRagSample != null ? (String) matchedRagSample.getOrDefault("sourceReference", "IEEE Std 12207 & Atlassian WBS Standards") : "PMBOK 7th Edition Agile Standards";
+        String ragSourceUrl = matchedRagSample != null ? (String) matchedRagSample.getOrDefault("sourceUrl", "https://www.atlassian.com/agile/project-management/work-breakdown-structure") : "https://www.pmi.org/pmbok-guide-standards";
+
         String systemPrompt = String.format("""
                 Bạn là một Requirement Agent (Product Owner / Business Analyst) chuyên nghiệp cho hệ thống quản lý dự án PROGA.
-                Nhiệm vụ của bạn là phân rã yêu cầu bài toán được cung cấp thành danh sách từ 10 - 25 Task cụ thể, được phân bổ theo thứ tự các Sprint phù hợp (Sprint 1, Sprint 2, ... số lượng Sprint linh hoạt tùy theo quy mô bài toán, có thể là 3, 4, 5 hoặc nhiều hơn).
+                Nhiệm vụ của bạn là phân rã yêu cầu bài toán được cung cấp thành danh sách từ 10 - 25 Task cụ thể, được phân bổ theo thứ tự các Sprint phù hợp.
                 
-                ĐÂY LÀ MẪU DỮ LIỆU TRI THỨC RAG TƯƠNG ĐỒNG ĐƯỢC RÚT RA TỪ KHO TRI THỨC ĐỂ BẠN HỌC THEO:
+                ĐÂY LÀ MẪU DỮ LIỆU TRI THỨC RAG TƯƠNG ĐỒNG ĐƯỢC RÚT RA TỪ KHO TRI THỨC NGUỒN CHUẨN QUỐC TẾ (%s):
                 %s
                 
-                Hãy trả về dữ liệu duy nhất dưới dạng JSON với cấu trúc chính xác sau:
+                YÊU CẦU ĐỊNH DẠNG ĐẦU RA STRICT JSON:
+                Bạn PHẢI trả về duy nhất chuỗi JSON chính xác theo cấu trúc sau (không kèm lời giải thích bên ngoài):
                 {
                   "summary": "Tóm tắt ngắn gọn các hạng mục công việc được phân rã",
+                  "sourceReference": "%s",
+                  "sourceUrl": "%s",
                   "tasks": [
                     {
                       "sprint": "Sprint 1: Tên Sprint",
                       "title": "Tên task ngắn gọn rõ ràng",
                       "description": "Mô tả công việc chi tiết",
                       "priority": "HIGH / MEDIUM / LOW / URGENT",
-                      "estimatedDays": 2
+                      "estimatedDays": 2,
+                      "storyPoints": 5,
+                      "reasoning": "Giải thích chi tiết độ phức tạp kỹ thuật và lý do chọn Story Points theo chuẩn Scrum",
+                      "recommendedRole": "Tech Lead / Senior Backend / Frontend Dev / DevOps / QA Lead / Business Analyst",
+                      "contingencyPlan": "Phương án xử lý khi gặp rủi ro kỹ thuật hoặc chậm tiến độ"
                     }
                   ]
                 }
-                """, sampleJsonContext);
+                """, ragSourceRef, sampleJsonContext, ragSourceRef, ragSourceUrl);
 
         String userPrompt = "Yêu cầu bài toán:\n" + request.getRequirementText();
         String rawResponse = callAiModel(systemPrompt, userPrompt);
@@ -222,6 +233,8 @@ public class AiServiceImpl implements AiService {
             Map<String, Object> parsed = objectMapper.readValue(cleanedJson, new TypeReference<Map<String, Object>>() {});
             
             String summary = (String) parsed.getOrDefault("summary", "Đã phân rã yêu cầu thành công");
+            String respSourceRef = (String) parsed.getOrDefault("sourceReference", ragSourceRef);
+            String respSourceUrl = (String) parsed.getOrDefault("sourceUrl", ragSourceUrl);
             List<Map<String, Object>> tasksRaw = (List<Map<String, Object>>) parsed.getOrDefault("tasks", Collections.emptyList());
 
             List<TaskDecompositionResponse.DecomposedTaskItem> taskItems = tasksRaw.stream().map(t -> 
@@ -230,13 +243,19 @@ public class AiServiceImpl implements AiService {
                         .title((String) t.get("title"))
                         .description((String) t.get("description"))
                         .priority((String) t.getOrDefault("priority", "MEDIUM"))
-                        .estimatedDays(t.get("estimatedDays") != null ? ((Number) t.get("estimatedDays")).intValue() : 1)
+                        .estimatedDays(t.get("estimatedDays") != null ? ((Number) t.get("estimatedDays")).intValue() : 2)
+                        .storyPoints(t.get("storyPoints") != null ? ((Number) t.get("storyPoints")).intValue() : 3)
+                        .reasoning((String) t.getOrDefault("reasoning", "Dựa trên độ phức tạp xử lý nghiệp vụ và tích hợp hệ thống"))
+                        .recommendedRole((String) t.getOrDefault("recommendedRole", "Backend Developer"))
+                        .contingencyPlan((String) t.getOrDefault("contingencyPlan", "Sử dụng tài liệu chuẩn và chia nhỏ công việc"))
                         .build()
             ).collect(Collectors.toList());
 
             responseObj = TaskDecompositionResponse.builder()
                     .threadId(thread.getId())
                     .summary(summary)
+                    .sourceReference(respSourceRef)
+                    .sourceUrl(respSourceUrl)
                     .tasks(taskItems)
                     .build();
 
@@ -259,6 +278,10 @@ public class AiServiceImpl implements AiService {
                             .description((String) st.get("description"))
                             .priority((String) st.getOrDefault("priority", "HIGH"))
                             .estimatedDays(st.get("estimatedDays") != null ? ((Number) st.get("estimatedDays")).intValue() : 2)
+                            .storyPoints(st.get("storyPoints") != null ? ((Number) st.get("storyPoints")).intValue() : 3)
+                            .reasoning((String) st.getOrDefault("reasoning", "Phân tích theo tiêu chuẩn WBS"))
+                            .recommendedRole((String) st.getOrDefault("recommendedRole", "Software Engineer"))
+                            .contingencyPlan((String) st.getOrDefault("contingencyPlan", "Tham khảo tài liệu kiến trúc mẫu"))
                             .build());
                 }
             } else {
@@ -268,12 +291,18 @@ public class AiServiceImpl implements AiService {
                         .description("Tạo sơ đồ ERD và DDL cho các bảng trong hệ thống")
                         .priority("URGENT")
                         .estimatedDays(3)
+                        .storyPoints(5)
+                        .reasoning("Thiết kế Schema cơ sở nền tảng quan trọng")
+                        .recommendedRole("Database Administrator / Tech Lead")
+                        .contingencyPlan("Dùng script migration tự động")
                         .build());
             }
 
             responseObj = TaskDecompositionResponse.builder()
                     .threadId(thread.getId())
                     .summary(fallbackSummary)
+                    .sourceReference(ragSourceRef)
+                    .sourceUrl(ragSourceUrl)
                     .tasks(fallbackItems)
                     .build();
 

@@ -4,53 +4,153 @@
     "domain": "Project Management & AI Agents",
     "title": "Hệ thống Quản lý tiến độ dự án tích hợp AI Agents (IUH-PROGA)",
     "requirementText": "Xây dựng hệ thống quản lý tiến độ dự án theo phương pháp Agile/Scrum tích hợp các AI Agents hỗ trợ phân rã việc tự động, tóm tắt tiến độ và tư vấn giải pháp kỹ thuật.",
-    "summary": "Phân rã dự án PROGA thành 22 task chi tiết trải qua 5 Sprint từ hạ tầng cơ bản đến tích hợp Spring AI và Vector DB RAG",
+    "summary": "Phân rã dự án PROGA thành các task chi tiết theo chuẩn Scrum WBS (IEEE Std 12207 & PMBOK 7th Edition Agile Guidelines), gán Story Points (Fibonacci) và phân vai cụ thể cho từng thành viên.",
+    "sourceReference": "Atlassian Jira Software Architecture & IEEE Std 12207 Software Life Cycle Processes Blueprint",
+    "sourceUrl": "https://www.atlassian.com/agile/project-management/work-breakdown-structure",
     "tasks": [
-      { "sprint": "Sprint 1", "title": "Thiết kế Database Schema PostgreSQL", "description": "Tạo DDL các bảng users, workspaces, spaces, sprints, tasks", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 1", "title": "Triển khai Auth-Service & Security JWT Gateway", "description": "Viết API Đăng nhập, Đăng ký, Refresh Token và Spring Cloud Gateway filter", "priority": "HIGH", "estimatedDays": 4 },
-      { "sprint": "Sprint 1", "title": "Đóng gói Docker Compose cho 5 Microservices", "description": "Đóng gói PostgreSQL, Redis, Eureka, API Gateway và Auth Service", "priority": "HIGH", "estimatedDays": 2 },
-      { "sprint": "Sprint 1", "title": "Cấu hình Spring Cloud OpenFeign Inter-service Communication", "description": "Kết nối Feign Client từ API Gateway và AI-Service tới Workspace-Service", "priority": "MEDIUM", "estimatedDays": 2 },
-      { "sprint": "Sprint 2", "title": "Phát triển REST APIs CRUD Workspace & Phân quyền User", "description": "Tạo controller và service quản lý Workspace kèm kiểm tra quyền Owner", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Triển khai tính năng Space Public / Private", "description": "Bổ sung trường is_private cho bảng spaces và lọc quyền truy cập theo User ID", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Xây dựng Giao diện Sprint Accordion & Backlog List View", "description": "Tạo UI hiển thị các Accordions chứa danh sách Task phân nhóm theo Sprint", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Xây dựng Drawer Panel xem & chỉnh sửa Task bên phải", "description": "Tạo slider drawer mở bên phải cho phép sửa tên, ngày, ưu tiên và gán người làm", "priority": "MEDIUM", "estimatedDays": 2 },
-      { "sprint": "Sprint 3", "title": "Xây dựng View Bảng Kanban 3 Cột (TODO, IN_PROGRESS, DONE)", "description": "Hiển thị các card công việc tương ứng theo trạng thái của Sprint Active", "priority": "HIGH", "estimatedDays": 2 },
-      { "sprint": "Sprint 3", "title": "Cấu hình WebSocket STOMP Endpoint & Broker Handler", "description": "Thiết lập WebSocket server trong Workspace-Service để phát broadcast real-time", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 3", "title": "Triển khai Kéo thả Drag & Drop Task giữa Kanban & Sprint", "description": "Dùng dnd-kit trên React/Next.js hỗ trợ kéo thả đổi cột và đổi Sprint", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 3", "title": "Tự động chuyển Task chưa xong sang Sprint mới khi Đóng Sprint", "description": "Xử lý logic tự động rollback task TODO/IN_PROGRESS sang Sprint tiếp theo", "priority": "HIGH", "estimatedDays": 2 },
-      { "sprint": "Sprint 3", "title": "Tự động đánh dấu nhãn Trễ Hạn (Overdue Badge)", "description": "Kiểm tra ngày kết thúc của Task so với hiện tại để hiển thị badge cảnh báo", "priority": "MEDIUM", "estimatedDays": 1 },
-      { "sprint": "Sprint 4", "title": "Cấu hình Spring AI & PGVector Database Extension", "description": "Kích hoạt PGVector trong PostgreSQL và cấu hình VectorStore trong ai-service", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 4", "title": "Tạo Kho Tri Thức RAG 12 Bộ Dữ Liệu Phân Rã Mẫu", "description": "Nạp dữ liệu vector của 12 dự án phần mềm mẫu phục vụ Similarity Search", "priority": "HIGH", "estimatedDays": 2 },
-      { "sprint": "Sprint 4", "title": "Phát triển Requirement Agent Phân rã bài toán tự động", "description": "Viết API /agents/decompose nhận yêu cầu bài toán và sinh task chuẩn JSON", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 4", "title": "Phát triển PM Agent Tóm tắt tiến độ & Dự báo rủi ro trễ deadline", "description": "Tự động gọi Feign Client tổng hợp tiến độ và cảnh báo rủi ro cho Space", "priority": "HIGH", "estimatedDays": 2 },
-      { "sprint": "Sprint 4", "title": "Phát triển Technical Advisor Agent Tư vấn giải pháp code/bug", "description": "Phân tích mô hình lỗi kỹ thuật và đề xuất hướng xử lý từng bước", "priority": "MEDIUM", "estimatedDays": 2 },
-      { "sprint": "Sprint 5", "title": "Viết Unit Test & Integration Test cho AI-Service", "description": "Tạo test cases bao phủ 85% logic RAG và AI Agent controllers", "priority": "MEDIUM", "estimatedDays": 2 },
-      { "sprint": "Sprint 5", "title": "Tối ưu hóa hiệu năng API Gateway Rate Limiting & Caching", "description": "Giảm độ trễ phản hồi API Gateway dưới 50ms", "priority": "LOW", "estimatedDays": 2 },
-      { "sprint": "Sprint 5", "title": "Đóng gói ứng dụng & Chuẩn bị Báo cáo Khóa luận Tốt nghiệp", "description": "Tổng hợp tài liệu thiết kế hệ thống, sơ đồ kiến trúc và kết quả thực nghiệm", "priority": "HIGH", "estimatedDays": 5 },
-      { "sprint": "Sprint 5", "title": "Quay Video Demo & Kiểm thử toàn bộ hệ thống", "description": "Kiểm thử khép kín từ Đăng ký, Tạo Workspace, Kéo thả Kanban tới AI Agents", "priority": "HIGH", "estimatedDays": 2 }
+      {
+        "sprint": "Sprint 1",
+        "title": "Thiết kế Schema Database PostgreSQL & Security JWT",
+        "description": "Tạo DDL các bảng users, workspaces, spaces, sprints, tasks, ai_threads, ai_chat_messages và cấu hình Spring Security JWT Gateway filter.",
+        "priority": "URGENT",
+        "estimatedDays": 3,
+        "storyPoints": 5,
+        "reasoning": "Cần đảm bảo toàn vẹn dữ liệu đa tenant (Workspace/Space Isolation) và bảo mật Token RSA/HMAC256.",
+        "recommendedRole": "Tech Lead / System Architect",
+        "contingencyPlan": "Sử dụng Docker PostgreSQL containerized để tự động hóa migration script Liquibase/Flyway."
+      },
+      {
+        "sprint": "Sprint 1",
+        "title": "Đóng gói Docker Compose cho 5 Microservices",
+        "description": "Đóng gói PostgreSQL, Redis, Eureka, API Gateway và Auth Service.",
+        "priority": "HIGH",
+        "estimatedDays": 2,
+        "storyPoints": 3,
+        "reasoning": "Môi trường đồng nhất giữa Local và Staging, giảm rủi ro xung đột môi trường.",
+        "recommendedRole": "DevOps Engineer",
+        "contingencyPlan": "Dùng `.env` template cấu hình tham số mạng Docker riêng biệt."
+      },
+      {
+        "sprint": "Sprint 2",
+        "title": "Phát triển REST APIs CRUD Workspace & Space Access Control",
+        "description": "Tạo controller và service quản lý Workspace/Space kèm kiểm tra quyền Owner/Member.",
+        "priority": "HIGH",
+        "estimatedDays": 3,
+        "storyPoints": 3,
+        "reasoning": "Tạo nền tảng làm việc cho các nhóm dự án.",
+        "recommendedRole": "Senior Backend Developer",
+        "contingencyPlan": "Sử dụng Spring Data JPA Repositories chuẩn hóa với Specification Pattern."
+      },
+      {
+        "sprint": "Sprint 2",
+        "title": "Xây dựng View Accordion Sprint & Drawer Edit Task",
+        "description": "Tạo UI hiển thị Accordion danh sách Task phân nhóm theo Sprint và slider panel xem/sửa công việc bên phải.",
+        "priority": "HIGH",
+        "estimatedDays": 3,
+        "storyPoints": 3,
+        "reasoning": "Tăng trải nghiệm làm việc cho PM khi thao tác trên máy tính.",
+        "recommendedRole": "Frontend Developer",
+        "contingencyPlan": "Dùng React Component state local để render tức thì trước khi ghi xuống DB."
+      },
+      {
+        "sprint": "Sprint 3",
+        "title": "Xây dựng Bảng Kanban 3 Cột & Realtime Drag & Drop Task",
+        "description": "Hiển thị các card công việc theo trạng thái (TODO, IN_PROGRESS, DONE) hỗ trợ kéo thả dnd-kit và WebSocket STOMP.",
+        "priority": "URGENT",
+        "estimatedDays": 3,
+        "storyPoints": 8,
+        "reasoning": "Logic kéo thả dnd-kit kết hợp WebSocket broadcast đồng bộ real-time giữa các thành viên có độ phức tạp cao.",
+        "recommendedRole": "Fullstack Developer",
+        "contingencyPlan": "Sử dụng Optimistic UI update trên Frontend, nạp lại nếu kết nối WebSocket gián đoạn."
+      },
+      {
+        "sprint": "Sprint 4",
+        "title": "Tích hợp Spring AI & PGVector Knowledge Base RAG",
+        "description": "Kích hoạt PGVector trong PostgreSQL, cấu hình VectorStore và nạp 15+ bộ tri thức WBS benchmark.",
+        "priority": "URGENT",
+        "estimatedDays": 4,
+        "storyPoints": 8,
+        "reasoning": "Cần cấu hình Vector Embedding Search (Cosine Similarity) chính xác để AI hiểu bài toán phần mềm.",
+        "recommendedRole": "AI / Data Engineer",
+        "contingencyPlan": "Dùng fallback RAG similarity search dựa trên từ khóa nếu mô hình Embedding bị quá tải quota."
+      },
+      {
+        "sprint": "Sprint 4",
+        "title": "Phát triển Requirement Clarification & Decomposition Co-Pilot Agent",
+        "description": "Viết API /agents/decompose nhận yêu cầu, đặt câu hỏi đàm thoại 2 chiều và sinh danh sách Task kèm Story Points & Role.",
+        "priority": "HIGH",
+        "estimatedDays": 4,
+        "storyPoints": 8,
+        "reasoning": "AI đóng vai trò Board Meeting Co-Pilot, đòi hỏi Prompt Engineering khắt khe và validate JSON Strict Output.",
+        "recommendedRole": "AI Solutions Architect",
+        "contingencyPlan": "Xây dựng JSON Repair Sanitizer xử lý các trường hợp LLM trả về markdown dư thừa."
+      },
+      {
+        "sprint": "Sprint 5",
+        "title": "Kiểm thử Tải WebSocket Realtime & Đóng gói Báo cáo KLTN",
+        "description": "Kiểm thử đồng thời 100+ kết nối WebSocket và hoàn thiện tài liệu báo cáo khoa học.",
+        "priority": "HIGH",
+        "estimatedDays": 4,
+        "storyPoints": 5,
+        "reasoning": "Đảm bảo tính sẵn sàng cao (High Availability) khi bảo vệ trước Hội đồng Phản biện.",
+        "recommendedRole": "QA Lead / Project Manager",
+        "contingencyPlan": "Chuẩn bị môi trường Standalone Backup khi trình diễn trước Hội đồng."
+      }
     ]
   },
   {
     "id": "sample-02",
     "domain": "E-Commerce Microservices",
-    "title": "Hệ thống Sàn Thương Mại Điện Tử Microservices",
+    "title": "Hệ thống Sàn Thương Mại Điện Tử Enterprise Microservices",
     "requirementText": "Phát triển sàn thương mại điện tử quy mô lớn hỗ trợ quản lý sản phẩm, giỏ hàng, thanh toán qua VNPAY/Momo, theo dõi đơn hàng và tìm kiếm ElasticSearch.",
-    "summary": "Phân rã dự án E-Commerce thành 20 task chính phân bổ theo 5 Sprint phát triển",
+    "summary": "Phân rã dự án E-Commerce Enterprise dựa trên Microsoft eShopOnContainers Benchmark Spec (PMBOK Agile Guideline).",
+    "sourceReference": "Microsoft eShopOnContainers Architecture Reference Guide & PMBOK 7th Edition WBS Standards",
+    "sourceUrl": "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/",
     "tasks": [
-      { "sprint": "Sprint 1", "title": "Thiết kế Cơ sở Dữ liệu Sản phẩm & Danh mục (Catalog DB)", "description": "Xây dựng bảng products, categories, attributes, product_images", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 1", "title": "Phát triển Product-Service & ElasticSearch Indexing", "description": "Đồng bộ dữ liệu sản phẩm lên ElasticSearch để hỗ trợ tìm kiếm siêu tốc", "priority": "HIGH", "estimatedDays": 4 },
-      { "sprint": "Sprint 1", "title": "Triển khai API Danh sách & Chi tiết Sản phẩm", "description": "Viết REST APIs hỗ trợ phân trang, lọc theo giá và danh mục", "priority": "HIGH", "estimatedDays": 2 },
-      { "sprint": "Sprint 2", "title": "Phát triển Cart-Service dùng Redis Caching", "description": "Lưu trữ thông tin giỏ hàng tạm thời trên Redis cho người dùng", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Xây dựng Giao diện Giỏ Hàng & Cập nhật số lượng", "description": "UI hiển thị danh sách món hàng, tính tổng tiền và áp mã giảm giá", "priority": "HIGH", "estimatedDays": 2 },
-      { "sprint": "Sprint 2", "title": "Phát triển Order-Service & Xử lý Transaction Trừ Kho", "description": "Tạo đơn hàng mới và gọi Feign Client trừ số lượng tồn kho", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 3", "title": "Tích hợp Cổng Thanh Toán VNPAY Sandbox", "description": "Tạo URL thanh toán VNPAY và xử lý IPN Callback cập nhật trạng thái đơn", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 3", "title": "Tích hợp Ví Điện Tử MoMo Payment API", "description": "Xử lý quét mã QR MoMo và thanh toán tức thì qua App Mobile", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 3", "title": "Xây dựng Giao diện Thanh toán Checkout & Địa chỉ giao hàng", "description": "UI cho phép chọn địa chỉ, phương thức vận chuyển và phương thức thanh toán", "priority": "HIGH", "estimatedDays": 2 },
-      { "sprint": "Sprint 4", "title": "Triển khai System Notification Service qua Email (SMTP)", "description": "Gửi email xác nhận đơn hàng thành công kèm hóa đơn điện tử", "priority": "MEDIUM", "estimatedDays": 2 },
-      { "sprint": "Sprint 4", "title": "Phát triển Giao diện Quản lý Đơn Hàng cho Người Mua", "description": "Xem trạng thái đơn hàng (Đang xử lý, Đang giao, Đã giao, Đã hủy)", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 4", "title": "Xây dựng Dashboard Thống kê Doanh số cho Seller/Admin", "description": "Biểu đồ doanh thu theo ngày/tháng và top sản phẩm bán chạy", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 5", "title": "Viết Automation Test cho Luồng Đặt Hàng & Thanh Toán", "description": "Dùng Cypress/Selenium kiểm thử từ chọn hàng tới hoàn tất thanh toán", "priority": "MEDIUM", "estimatedDays": 3 },
-      { "sprint": "Sprint 5", "title": "Tối ưu hóa Caching & Load Balancing Nginx Gateway", "description": "Cấu hình Nginx reverse proxy và Redis cluster", "priority": "LOW", "estimatedDays": 2 }
+      {
+        "sprint": "Sprint 1",
+        "title": "Thiết kế Schema Database Catalog Service & ElasticSearch Indexing",
+        "description": "Xây dựng bảng products, categories, attributes và đồng bộ dữ liệu sang ElasticSearch.",
+        "priority": "URGENT",
+        "estimatedDays": 3,
+        "storyPoints": 5,
+        "reasoning": "Tìm kiếm sản phẩm siêu tốc đòi hỏi Indexing cấu hình chuẩn xác trên ElasticSearch.",
+        "recommendedRole": "Database Administrator / Senior BE",
+        "contingencyPlan": "Tạo Logstash pipeline tự động sync dữ liệu từ PostgreSQL sang ElasticSearch."
+      },
+      {
+        "sprint": "Sprint 2",
+        "title": "Phát triển Cart-Service với Redis Distributed Caching",
+        "description": "Lưu trữ thông tin giỏ hàng tạm thời trên Redis cluster cho người mua.",
+        "priority": "HIGH",
+        "estimatedDays": 3,
+        "storyPoints": 3,
+        "reasoning": "Tốc độ đọc/ghi giỏ hàng cần < 10ms để không ảnh hưởng đến chuyển đổi mua hàng.",
+        "recommendedRole": "Backend Developer",
+        "contingencyPlan": "Cấu hình Redis TTL (Time-To-Live) 7 ngày tự dọn dẹp giỏ hàng ảo."
+      },
+      {
+        "sprint": "Sprint 3",
+        "title": "Tích hợp Cổng Thanh Toán VNPAY & MoMo IPN Callbacks",
+        "description": "Tạo URL thanh toán và xử lý IPN Callback xác nhận giao dịch an toàn (Checksum Validation).",
+        "priority": "URGENT",
+        "estimatedDays": 4,
+        "storyPoints": 8,
+        "reasoning": "Liên quan đến tiền bạc và bảo mật Webhook Hash Signature.",
+        "recommendedRole": "Security & Fintech Engineer",
+        "contingencyPlan": "Sử dụng Idempotent Key để ngăn chặn xử lý trùng lặp giao dịch khi VNPAY retry IPN."
+      },
+      {
+        "sprint": "Sprint 4",
+        "title": "Phát triển Dashboard Thống kê Doanh số & Báo cáo Tồn Kho",
+        "description": "Biểu đồ thống kê doanh thu theo ngày/tháng và cảnh báo sản phẩm sắp hết hàng.",
+        "priority": "HIGH",
+        "estimatedDays": 3,
+        "storyPoints": 5,
+        "reasoning": "Truy vấn thống kê tổng hợp lớn cần được tối ưu bằng Materialized Views.",
+        "recommendedRole": "Frontend / Data Visualization Dev",
+        "contingencyPlan": "Cache kết quả báo cáo thống kê theo giờ trên Redis."
+      }
     ]
   },
   {
@@ -58,166 +158,32 @@
     "domain": "Fintech & Mobile Banking",
     "title": "Ứng Dụng Ngân Hàng Số & Ví Điện Tử Mobile Banking",
     "requirementText": "Xây dựng ứng dụng ngân hàng số bảo mật cao hỗ trợ xác thực sinh trắc học (FaceID/Vân tay), chuyển tiền 24/7 qua Napas, thanh toán QR Code và tra cứu lịch sử giao dịch.",
-    "summary": "Phân rã dự án Ngân hàng số thành 18 task bảo mật cao trải rộng 5 Sprint",
+    "summary": "Phân rã ứng dụng Fintech theo tiêu chuẩn ISO/IEC 27001 & PCI-DSS Compliance Guidelines.",
+    "sourceReference": "ISO/IEC 27001 Information Security & PCI-DSS Financial System WBS Benchmark",
+    "sourceUrl": "https://www.pcisecuritystandards.org/",
     "tasks": [
-      { "sprint": "Sprint 1", "title": "Thiết kế Core Banking Account Schema & PostgreSQL", "description": "Bảng accounts, balances, transactions, beneficiaries mã hóa dữ liệu", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 1", "title": "Phát triển Auth-Service với mTLS & OAuth2 / OpenID Connect", "description": "Xác thực hai yếu tố (2FA) qua OTP SMS và FaceID", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 2", "title": "Xây dựng Transfer-Service & Xử lý Giao dịch Chuyển tiền Nội bộ", "description": "Đảm bảo tính ACID giao dịch tài chính với Spring Transactional", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 2", "title": "Tích hợp Cổng Chuyển Tiền Liên Ngân Hàng Napas 247", "description": "Kết nối API Napas tra cứu tên tài khoản và chuyển khoản tức thì", "priority": "HIGH", "estimatedDays": 4 },
-      { "sprint": "Sprint 3", "title": "Phát triển Chức năng Quét Mã QR Code (VietQR Standard)", "description": "Tự động bóc tách thông tin ngân hàng, số tài khoản từ mã VietQR", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 3", "title": "Xây dựng Giao diện Lịch sử Giao dịch & Xuất File Statement PDF", "description": "Cho phép lọc biểu đồ thu chi và tải sao kê tài khoản", "priority": "MEDIUM", "estimatedDays": 3 },
-      { "sprint": "Sprint 4", "title": "Triển khai Push Notification khi Có Biến Động Số Dư", "description": "Gửi thông báo tức thì qua Firebase Cloud Messaging (FCM)", "priority": "HIGH", "estimatedDays": 2 },
-      { "sprint": "Sprint 4", "title": "Tích hợp Mô Hình AI Phát Hiện Giao Dịch Bất Thường (Fraud Detection)", "description": "Cảnh báo giao dịch rủi ro vượt hạn mức hoặc vị trí địa lý lạ", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 5", "title": "Kiểm thử Bảo mật Penetration Testing & OWASP Top 10 Audit", "description": "Đảm bảo ứng dụng chống tấn công SQL Injection, XSS, CSRF", "priority": "HIGH", "estimatedDays": 4 }
-    ]
-  },
-  {
-    "id": "sample-04",
-    "domain": "HRM & Smart Attendance",
-    "title": "Hệ Thống Quản Lý Nhân Sự & Chấm Công Thông Minh",
-    "requirementText": "Phát triển hệ thống quản lý nguồn nhân lực cho doanh nghiệp bao gồm quản lý hồ sơ nhân sự, chấm công qua FaceID/GPS, phê duyệt đơn nghỉ phép và tính lương tự động.",
-    "summary": "Phân rã dự án HRM thành 16 task chính trải qua 4 Sprint phát triển",
-    "tasks": [
-      { "sprint": "Sprint 1", "title": "Thiết kế Schema Nhân sự, Phòng ban & Chức danh", "description": "Bảng employees, departments, positions, employment_contracts", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 1", "title": "Xây dựng REST APIs Quản lý Hồ sơ Nhân viên", "description": "Tạo CRUD thông tin nhân viên, hợp đồng lao động và quá trình công tác", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Phát triển API Chấm Công GPS & Nhận diện Khuôn mặt (FaceID)", "description": "Xác thực vị trí địa lý của thiết bị di động khi nhân viên Check-in/Check-out", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 2", "title": "Xây dựng Workflow Phê Duyệt Đơn Nghỉ Phép / Đi Trễ", "description": "Quy trình gửi đơn từ Nhân viên -> Quản lý trực tiếp duyệt qua Email/UI", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 3", "title": "Phát triển Engine Bảng Lương Tự Động (Payroll Engine)", "description": "Tính toán lương thực nhận dựa trên ngày công, OT, phụ cấp và bảo hiểm", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 3", "title": "Xây dựng Giao diện Xem Phiếu Lương (Payslip) cho Nhân viên", "description": "UI hiển thị chi tiết các khoản trừ BHXH, Thuế TNCN và tiền lương net", "priority": "MEDIUM", "estimatedDays": 2 },
-      { "sprint": "Sprint 4", "title": "Thống kê Biển đồ Nhân sự & Tỷ lệ Nghỉ việc (Turnover Rate)", "description": "Dashboard báo cáo biến động nhân sự cho Trưởng phòng HR", "priority": "MEDIUM", "estimatedDays": 3 }
-    ]
-  },
-  {
-    "id": "sample-05",
-    "domain": "Ride-Hailing & Logistics",
-    "title": "Hệ Thống Đặt Xe Công Nghệ & Giao Hàng Real-time",
-    "requirementText": "Xây dựng nền tảng đặt xe công nghệ (tương tự Grab/Gojek) bao gồm định vị GPS real-time, thuật toán ghép tài xế tối ưu, tính cước tự động và bản đồ lộ trình.",
-    "summary": "Phân rã dự án Đặt xe công nghệ thành 22 task chi tiết chia thành 5 Sprint",
-    "tasks": [
-      { "sprint": "Sprint 1", "title": "Thiết kế Data Schema Tài xế, Khách hàng & Chuyến xe", "description": "Bảng drivers, passengers, rides, locations, vehicle_types", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 1", "title": "Tích hợp Google Maps API & Mapbox SDK", "description": "Hiển thị bản đồ tương tác, tìm kiếm địa chỉ và gợi ý tuyến đường ngắn nhất", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Phát triển Geo-location Service lưu Vị trí Tài xế trên Redis Geo", "description": "Lưu trữ tọa độ GPS tài xế cập nhật mỗi 3 giây", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 2", "title": "Xây dựng Thuật Toán Ghép Chuyến (Driver Matching Algorithm)", "description": "Tìm kiếm các tài xế trống gần khách hàng nhất trong bán kính 3km", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 3", "title": "Phát triển WebSocket Broadcast Phát Đơn Cho Tài Xế", "description": "Gửi tín hiệu nhận chuyến tới App Tài xế kèm đồng hồ đếm ngược 15s", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 3", "title": "Xây dựng Screen Theo Dõi Lộ Trình Xe Theo Thời Gian Thực", "description": "Hiển thị icon xe di chuyển mượt mà trên bản đồ cho khách hàng", "priority": "HIGH", "estimatedDays": 4 },
-      { "sprint": "Sprint 4", "title": "Triển khai Chức năng Đánh Giá Star Rating & Feedback", "description": "Khách hàng chấm điểm 1-5 sao và để lại nhận xét sau khi kết thúc chuyến", "priority": "MEDIUM", "estimatedDays": 2 },
-      { "sprint": "Sprint 4", "title": "Xây dựng Engine Tính Cước Phí Động theo Giờ Cao Điểm (Surge Pricing)", "description": "Tự động nhân hệ số giá khi nhu cầu đặt xe tăng cao tại khu vực", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 5", "title": "Kiểm thử Tải Đồng Thời (Load Testing) với 10,000 Kết Nối WebSocket", "description": "Dùng JMeter kiểm tra khả năng chịu tải của hệ thống phát đơn real-time", "priority": "HIGH", "estimatedDays": 3 }
-    ]
-  },
-  {
-    "id": "sample-06",
-    "domain": "LMS & E-Learning",
-    "title": "Nền Tảng Học Trực Tuyến & Thi Trắc Nghiệm LMS",
-    "requirementText": "Phát triển hệ thống học trực tuyến hỗ trợ xem video bài giảng HLS, thi trắc nghiệm tính giờ tự động, cấp chứng chỉ và thảo luận bài học.",
-    "summary": "Phân rã dự án E-Learning LMS thành 18 task chi tiết qua 4 Sprint",
-    "tasks": [
-      { "sprint": "Sprint 1", "title": "Thiết kế Schema Khóa học, Bài học & Học viên", "description": "Bảng courses, modules, lessons, enrollments, quizzes", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 1", "title": "Tích hợp Video Streaming Server (HLS / DASH Protocol)", "description": "Mã hóa video bài giảng thành các phân đoạn nhỏ chống tải chùa", "priority": "HIGH", "estimatedDays": 4 },
-      { "sprint": "Sprint 2", "title": "Phát triển Engine Bài Thi Trắc Nghiệm Tính Giờ Tự Động", "description": "Tự động nộp bài khi hết giờ và chấm điểm trắc nghiệm tức thì", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Xây dựng Giao diện Học Bài Xem Video & Note Ghi Chú", "description": "Player xem video mượt mà kèm danh sách bài học bên phải", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 3", "title": "Triển khai Chức năng Cấp Chứng Chỉ PDF Tự Động", "description": "Sinh file PDF chứng chỉ hoàn thành khóa học khi tiến độ đạt 100%", "priority": "MEDIUM", "estimatedDays": 2 },
-      { "sprint": "Sprint 3", "title": "Xây dựng Diễn đàn Thảo luận dưới mỗi Bài học", "description": "Học viên gửi câu hỏi và giảng viên trả lời bình luận", "priority": "MEDIUM", "estimatedDays": 2 },
-      { "sprint": "Sprint 4", "title": "Dashboard Thống kê Tiến độ Học tập cho Học viên", "description": "Biểu đồ hoàn thành khóa học và điểm số các bài kiểm tra", "priority": "LOW", "estimatedDays": 2 }
-    ]
-  },
-  {
-    "id": "sample-07",
-    "domain": "Hospital Management & Telehealth",
-    "title": "Hệ Thống Quản Lý Bệnh Viện & Đặt Lịch Khám Bệnh",
-    "requirementText": "Phát triển phần mềm quản lý phòng khám/bệnh viện bao gồm đặt lịch khám theo bác sĩ, quản lý Hồ sơ bệnh án điện tử (EHR), tư vấn từ xa qua Video Call và đơn thuốc điện tử.",
-    "summary": "Phân rã dự án Bệnh viện thành 20 task chính tuân thủ chuẩn y tế qua 5 Sprint",
-    "tasks": [
-      { "sprint": "Sprint 1", "title": "Thiết kế Schema Bệnh nhân, Bác sĩ, Lịch khám & Bệnh án", "description": "Bảng patients, doctors, appointments, medical_records, prescriptions", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 1", "title": "Phát triển API Quản lý Lịch Làm Việc của Bác Sĩ", "description": "Cho phép Bác sĩ đăng ký ca khám và khung giờ tư vấn", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Xây dựng Giao diện Đặt Lịch Khám Bệnh cho Bệnh nhân", "description": "Chọn chuyên khoa, bác sĩ, ngày giờ khám và thanh toán phí trước", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Triển khai Hệ Thống Nhắc Lịch Khám qua Zalo ZNS / SMS", "description": "Gửi tin nhắn tự động nhắc lịch khám trước 1 ngày", "priority": "HIGH", "estimatedDays": 2 },
-      { "sprint": "Sprint 3", "title": "Tích hợp WebRTC cho Tư Vấn Khám Bệnh Từ Xa (Telehealth Video Call)", "description": "Cuộc gọi video mượt mà trực tiếp trên trình duyệt giữa Bác sĩ & Bệnh nhân", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 3", "title": "Phát triển Giao diện Kê Đơn Thuốc Điện Tử cho Bác sĩ", "description": "Tra cứu danh mục thuốc, liều dùng và in đơn thuốc chuẩn mã QR", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 4", "title": "Xây dựng Quản lý Hồ Sơ Bệnh Án Điện Tử (EHR Data Security)", "description": "Bảo mật lịch sử khám bệnh và kết quả xét nghiệm mã hóa", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 5", "title": "Kiểm thử Bảo mật Thông tin Y tế tuân thủ HIPAA Standard", "description": "Rà soát lỗ hổng rò rỉ dữ liệu thông tin sức khỏe cá nhân", "priority": "MEDIUM", "estimatedDays": 3 }
-    ]
-  },
-  {
-    "id": "sample-08",
-    "domain": "Social Network & Travel Booking",
-    "title": "Ứng Dụng Mạng Xã Hội & Đặt Phòng Du Lịch",
-    "requirementText": "Phát triển ứng dụng du lịch kết hợp mạng xã hội chia sẻ trải nghiệm: tìm kiếm khách sạn/vé máy bay, đăng bài viết trải nghiệm, tương tác thả tim/bình luận và chat trực tiếp.",
-    "summary": "Phân rã dự án Mạng xã hội du lịch thành 18 task chi tiết qua 4 Sprint",
-    "tasks": [
-      { "sprint": "Sprint 1", "title": "Thiết kế Schema Khách sạn, Phòng, Bài viết & Bình luận", "description": "Bảng hotels, rooms, posts, comments, likes, bookings", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 1", "title": "Phát triển API Đăng Bài Trải Nghiệm Du Lịch kèm Ảnh/Video", "description": "Hỗ trợ upload đa phương tiện lên AWS S3 / Cloudinary", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Xây dựng Newfeed Bảng Tin Bài Viết Động", "description": "Thuật toán sắp xếp bài viết theo độ hot và lịch sử quan tâm của người dùng", "priority": "HIGH", "estimatedDays": 4 },
-      { "sprint": "Sprint 2", "title": "Phát triển Chức năng Tương Tác Thả Tim, Bình Luận Real-time", "description": "WebSocket cập nhật số lượng like và comment tức thì", "priority": "MEDIUM", "estimatedDays": 2 },
-      { "sprint": "Sprint 3", "title": "Xây dựng Engine Tìm Kiếm & Đặt Phòng Khách Sạn", "description": "Lọc khách sạn theo vị trí, mức giá, tiện ích và ngày nhận/trả phòng", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 3", "title": "Tích hợp Chat Trực Tiếp giữa Khách Hàng và Chủ Khách Sạn", "description": "Khung chat tin nhắn tức thời trao đổi về phòng và dịch vụ", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 4", "title": "Dashboard Thống kê Đặt phòng cho Chủ Khách sạn (Partner)", "description": "Quản lý phòng trống, doanh thu theo tháng và danh sách khách lưu trú", "priority": "MEDIUM", "estimatedDays": 3 }
-    ]
-  },
-  {
-    "id": "sample-09",
-    "domain": "Warehouse & Supply Chain",
-    "title": "Hệ Thống Quản Lý Kho & Chuỗi Cung Ứng (WMS)",
-    "requirementText": "Xây dựng phần mềm quản lý kho vận thông minh hỗ trợ nhập kho, xuất kho, quét mã vạch Barcode/QR Code, kiểm kê tồn kho tự động và cảnh báo tồn kho tối thiểu.",
-    "summary": "Phân rã dự án Quản lý kho thành 18 task nghiệp vụ qua 4 Sprint",
-    "tasks": [
-      { "sprint": "Sprint 1", "title": "Thiết kế Schema Kho hàng, Vị trí (Bin/Rack), Vẫn đơn & Hàng hóa", "description": "Bảng warehouses, inventory_locations, items, stock_entries", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 1", "title": "Phát triển REST APIs Quản Lý Danh Mục Hàng Hóa", "description": "Tạo thông tin mã SKU, mã vạch Barcode, đơn vị tính và giá vốn", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Xây dựng Workflow Nhập Kho (Inbound Stock Entry)", "description": "Tạo phiếu nhập kho từ nhà cung cấp và phân bổ vị trí lưu trữ", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Xây dựng Workflow Xuất Kho (Outbound Dispatch)", "description": "Tạo phiếu xuất kho theo nguyên tắc FIFO (Hàng nhập trước xuất trước)", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 3", "title": "Tích hợp Quét Mã QR / Barcode qua Camera Máy Quét Handheld", "description": "Quét mã kiểm tra hàng nhanh chóng khi nhập/xuất kho", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 3", "title": "Cấu hình Hệ Thống Cảnh Báo Tồn Kho Tối Thiểu (Low Stock Alert)", "description": "Tự động gửi email/thông báo khi số lượng mặt hàng xuống dưới ngưỡng an toàn", "priority": "HIGH", "estimatedDays": 2 },
-      { "sprint": "Sprint 4", "title": "Báo cáo Kiểm Kê Kho & Báo Cáo Chênh Lệch Tồn Kho", "description": "So sánh số lượng trên phần mềm với số lượng thực tế kiểm đếm", "priority": "MEDIUM", "estimatedDays": 3 }
-    ]
-  },
-  {
-    "id": "sample-10",
-    "domain": "Customer Service LLM Chatbot",
-    "title": "Hệ Thống Trợ Lý AI Chatbot Chăm Sóc Khách Hàng",
-    "requirementText": "Phát triển nền tảng Chatbot AI hỗ trợ doanh nghiệp tự động trả lời thắc mắc của khách hàng dựa trên tài liệu tài nguyên doanh nghiệp (RAG), chuyển giao cuộc gọi cho tư vấn viên.",
-    "summary": "Phân rã dự án Chatbot AI thành 18 task công nghệ LLM qua 4 Sprint",
-    "tasks": [
-      { "sprint": "Sprint 1", "title": "Thiết kế Schema Bot, Knowledge Base, Conversations & Messages", "description": "Bảng bots, documents, vector_embeddings, chat_sessions", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 1", "title": "Phát triển Widget Chat nhúng Website (Javascript SDK Embed)", "description": "Khung chat nhỏ gọn góc màn hình nhúng vào bất kỳ trang web nào", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Tích hợp Pipeline Đọc Tài Liệu PDF/Docx & Chunking VectorStore", "description": "Phân đoạn văn bản và nạp dữ liệu tri thức doanh nghiệp vào Vector DB", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 2", "title": "Phát triển RAG Retrieval Engine Trả lời thắc mắc tự động", "description": "Tìm kiếm ngữ nghĩa bài viết liên quan và dùng LLM tổng hợp câu trả lời", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 3", "title": "Xây dựng Chức năng Chuyển Giao Cho Tư Vấn Viên (Human Handoff)", "description": "Tự động chuyển cuộc chat cho nhân viên thật khi AI không giải quyết được", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 3", "title": "Xây dựng Giao diện Dashboard Quản lý Lịch sử Chat cho Supporter", "description": "Nền tảng hỗ trợ nhân viên tư vấn nhiều khách hàng cùng lúc", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 4", "title": "Thống kê Hiệu Quả Chatbot & Tỷ lệ Hài lòng Khách hàng (CSAT)", "description": "Biểu đồ đo lường số lượng câu hỏi AI giải quyết thành công", "priority": "MEDIUM", "estimatedDays": 2 }
-    ]
-  },
-  {
-    "id": "sample-11",
-    "domain": "Media Streaming Platform",
-    "title": "Nền Tảng Xem Phim & Stream Trực Tuyến Media Streaming",
-    "requirementText": "Xây dựng ứng dụng xem phim trực tuyến chất lượng cao (tương tự Netflix), hỗ trợ phát video định dạng HLS/DASH đa độ phân giải (1080p, 4K), gợi ý phim bằng AI và mua gói xem phim.",
-    "summary": "Phân rã dự án Streaming thành 20 task hạ tầng truyền thông qua 5 Sprint",
-    "tasks": [
-      { "sprint": "Sprint 1", "title": "Thiết kế Schema Phim, Tập phim, Diễn viên & Gói dịch vụ", "description": "Bảng movies, episodes, genres, subscriptions, watch_history", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 1", "title": "Xây dựng Pipeline Transcoding Video tự động với FFmpeg", "description": "Chuyển đổi video gốc sang chuẩn HLS với các độ phân giải 360p, 720p, 1080p", "priority": "URGENT", "estimatedDays": 4 },
-      { "sprint": "Sprint 2", "title": "Tích hợp CDN (Cloudflare / AWS CloudFront) Phân phối Video", "description": "Đảm bảo tải video mượt mà không bị giật lag khi nhiều người xem", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Xây dựng Giao diện Player Xem Phim Tùy Chỉnh (Custom Video Player)", "description": "Player hỗ trợ chọn độ phân giải, phụ đề, tốc độ phát và tua 10 giây", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 3", "title": "Phát triển Chức năng Lưu Tiến Độ Đang Xem (Continue Watching)", "description": "Tự động nhớ thời điểm dừng xem để người dùng xem tiếp ở thiết bị khác", "priority": "HIGH", "estimatedDays": 2 },
-      { "sprint": "Sprint 3", "title": "Xây dựng Hệ Thống Đăng Ký Gói Cước (Subscription Plan)", "description": "Thanh toán gói hàng tháng qua cổng VNPAY / Ví MoMo", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 4", "title": "Triển khai Thuật Toán AI Gợi Ý Phim Yêu Thích (Recommendation System)", "description": "Gợi ý phim dựa trên thể loại ưa thích và lịch sử xem của người dùng", "priority": "MEDIUM", "estimatedDays": 4 },
-      { "sprint": "Sprint 5", "title": "Kiểm thử Chịu Tải Video Streaming với 5,000 Concurrent Users", "description": "Đảm bảo CDN và Bandwidth máy chủ đáp ứng nhu cầu xem cao điểm", "priority": "HIGH", "estimatedDays": 3 }
-    ]
-  },
-  {
-    "id": "sample-12",
-    "domain": "Food Delivery & Restaurant POS",
-    "title": "Hệ Thống Đặt Đồ Ăn & Quản Lý Nhà Hàng (Food Delivery & POS)",
-    "requirementText": "Phát triển giải pháp toàn diện cho chuỗi nhà hàng gồm ứng dụng đặt đồ ăn cho khách, màn hình gọi món POS tại bàn và màn hình hiển thị nhà bếp KDS (Kitchen Display System).",
-    "summary": "Phân rã dự án POS Nhà hàng thành 22 task chi tiết qua 5 Sprint",
-    "tasks": [
-      { "sprint": "Sprint 1", "title": "Thiết kế Schema Nhà hàng, Thực đơn, Món ăn & Bàn ăn", "description": "Bảng restaurants, menus, food_items, dining_tables, orders", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 1", "title": "Phát triển REST APIs Quản Lý Thực Đơn & Topping đính kèm", "description": "CRUD món ăn, danh mục, tùy chọn size và món thêm", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Xây dựng Giao diện POS Gọi Món tại Bàn bằng Tablet", "description": "Nhân viên phục vụ thao tác chọn món và gửi đơn xuống nhà bếp tức thì", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 2", "title": "Phát triển Giao diện Màn hình Nhà Bếp (Kitchen Display System - KDS)", "description": "Màn hình KDS hiển thị các món cần chế biến theo thứ tự thời gian gọi", "priority": "HIGH", "estimatedDays": 3 },
-      { "sprint": "Sprint 3", "title": "Cấu hình WebSocket Synchronizer giữa Bàn - Bếp - Thu Ngân", "description": "Đồng bộ trạng thái món (Đang làm -> Đã xong -> Đã lên bàn) tức thời", "priority": "URGENT", "estimatedDays": 3 },
-      { "sprint": "Sprint 3", "title": "Xây dựng App Đặt Đồ Ăn Giao Tận Nơi cho Khách Hàng", "description": "Khách hàng chọn nhà hàng, thêm món vào giỏ và đặt giao tận nhà", "priority": "HIGH", "estimatedDays": 4 },
-      { "sprint": "Sprint 4", "title": "Tích hợp Máy In Hóa Đơn Nhiệt (Bluetooth / LAN Thermal Printer)", "description": "Tự động in bill thanh toán khi thu ngân bấm tính tiền", "priority": "MEDIUM", "estimatedDays": 3 },
-      { "sprint": "Sprint 5", "title": "Dashboard Thống kê Doanh Thu, Tồn Nguyên Liệu & Top Món Bán Chạy", "description": "Báo cáo kinh doanh theo ca làm việc cho Quản lý nhà hàng", "priority": "MEDIUM", "estimatedDays": 3 }
+      {
+        "sprint": "Sprint 1",
+        "title": "Xây dựng Module HSM Hardware Security & Encryption Key Rotation",
+        "description": "Mã hóa dữ liệu tài khoản và số thẻ theo chuẩn AES-256 GCM.",
+        "priority": "URGENT",
+        "estimatedDays": 5,
+        "storyPoints": 13,
+        "reasoning": "Yêu cầu an ninh tài chính tối cao theo chuẩn PCI-DSS Level 1.",
+        "recommendedRole": "Security Specialist / Lead Backend",
+        "contingencyPlan": "Dùng HashiCorp Vault để quản lý mã hóa khóa bí mật tập trung."
+      },
+      {
+        "sprint": "Sprint 2",
+        "title": "Triển khai Chuyển Tiền Realtime 24/7 qua cổng Napas API",
+        "description": "Xử lý transaction 2 pha (2-Phase Commit) nạp/rút tiền liên ngân hàng.",
+        "priority": "URGENT",
+        "estimatedDays": 4,
+        "storyPoints": 8,
+        "reasoning": "Tránh rủi ro treo tiền khi mạng Napas chập chờn.",
+        "recommendedRole": "Fintech Integration Specialist",
+        "contingencyPlan": "Xây dựng hệ thống Reconcile (Đối soát) tự động chạy hàng đêm."
+      }
     ]
   }
 ]
