@@ -223,19 +223,16 @@ public class AiServiceImpl implements AiService {
         if (isFirstTurn) {
             // Turn 1: Clarification & Interview Phase (DO NOT GENERATE TASKS YET!)
             systemPrompt = String.format("""
-                Bạn là một Requirement Agent (Product Owner / Business Analyst) chuyên nghiệp cho hệ thống PROGA.
+                Bạn là một Requirement Agent (Product Owner / Business Analyst Co-Pilot) chuyên nghiệp cho hệ thống PROGA.
                 ĐÂY LÀ LƯỢT ĐÀM THOẠI ĐẦU TIÊN để làm rõ phạm vi bài toán với người dùng.
                 Nhiệm vụ của bạn:
-                1. Chào mừng người dùng và xác nhận đã nhận được mô tả bài toán.
-                2. Đưa ra 3 CÂU HỎI LÀM RÕ CỤ THỂ bằng văn bản trong trường 'summary':
-                   - Hỏi về thành viên trong team và phân vai (vd: Ai làm Backend, Frontend, QA?).
-                   - Hỏi về yêu cầu bảo mật, thanh toán hoặc tích hợp đặc thù (vd: VNPay, MoMo, JWT?).
-                   - Hỏi về số lượng Sprint hoặc thời gian kỳ vọng triển khai.
+                1. Đọc kỹ mô tả bài toán CỦA NGƯỜI DÙNG và phân tích các góc độ nghiệp vụ/kỹ thuật.
+                2. Đưa ra 3-4 CÂU HỎI PHỎNG VẤN ĐÀM THOẠI ĐƯỢC THIẾT KẾ DÀNH RIÊNG CHO CHÍNH BÀI TOÁN ĐÓ trong trường 'summary' (Ví dụ: Nếu bài toán là Quản lý Nhà hàng thì hỏi về gọi món QR Code/Màn hình bếp/POS; Nếu là Y tế thì hỏi về WebRTC Video call/Mã hóa bệnh án AES-256; Nếu là Đồ án IUH thì hỏi về quy trình duyệt đề tài; Hỏi thêm về phân công nhân sự Nam/Linh/Tuấn nếu chưa rõ).
                 3. BẮT BUỘC TRẢ VỀ MẢNG 'tasks': [] RỖNG NGUYÊN BẢN (KHÔNG TẠO BẤT KỲ TASK NÀO Ở LƯỢT NÀY!).
                 
                 YÊU CẦU ĐỊNH DẠNG ĐẦU RA STRICT JSON:
                 {
-                  "summary": "Lời chào và 3 câu hỏi đàm thoại chi tiết gửi đến người dùng",
+                  "summary": "Lời chào và 3-4 câu hỏi phỏng vấn nghiệp vụ được thiết kế DÀNH RIÊNG cho bài toán của người dùng",
                   "sourceReference": "%s",
                   "sourceUrl": "%s",
                   "tasks": []
@@ -541,14 +538,43 @@ public class AiServiceImpl implements AiService {
     private String generateMockAiResponse(String systemPrompt, String userPrompt) {
         if (systemPrompt.contains("Requirement Agent")) {
             if (systemPrompt.contains("LƯỢT ĐÀM THOẠI ĐẦU TIÊN")) {
-                return """
+                String promptLower = userPrompt.toLowerCase();
+                String dynamicQuestions;
+
+                if (promptLower.contains("nhà hàng") || promptLower.contains("quản lý bàn") || promptLower.contains("thực đơn") || promptLower.contains("gọi món")) {
+                    dynamicQuestions = "Chào bạn! Tôi là Requirement Agent (PO/BA) chuyên trách bài toán QUẢN LÝ NHÀ HÀNG. Để hỗ trợ bóc tách danh sách WBS Tasks chính xác và sát thực tế nhất cho dự án của bạn, tôi cần trao đổi 3 câu hỏi nghiệp vụ sau:\\n" +
+                                       "1. Mô hình gọi món tại nhà hàng của bạn là gì (Khách hàng tự quét mã QR tại bàn, Nhân viên phục vụ cầm Tablet ghi món, hay Gọi món tại quầy thu ngân)?\\n" +
+                                       "2. Hệ thống có yêu cầu màn hình Bếp (Kitchen Display System) đẩy đơn thời gian thực và tự động in hóa đơn VNPAY tại bàn không?\\n" +
+                                       "3. Đội ngũ phát triển của bạn có bao nhiêu thành viên và phân công vai trò cụ thể thế nào (ví dụ: Nam làm Backend, Linh làm Frontend, Tuấn làm QA)?\\n\\n" +
+                                       "👉 Bạn vui lòng nhắn tin trả lời các thông tin trên trong khung chat bên dưới để tôi bắt đầu bóc tách Bảng Task chuẩn nhé!";
+                } else if (promptLower.contains("y tế") || promptLower.contains("telehealth") || promptLower.contains("bác sĩ") || promptLower.contains("bệnh nhân") || promptLower.contains("khám")) {
+                    dynamicQuestions = "Chào bạn! Tôi là Requirement Agent (PO/BA) chuyên trách bài toán Y TẾ SỐ & TELEHEALTH. Để bóc tách WBS Tasks chuẩn xác cho dự án Y tế của bạn, tôi cần trao đổi 3 câu hỏi sau:\\n" +
+                                       "1. Tính năng tư vấn khám từ xa có yêu cầu phòng gọi Video Call WebRTC 1-1 trực tiếp giữa Bác sĩ & Bệnh nhân kết hợp chat gửi file xét nghiệm không?\\n" +
+                                       "2. Hồ sơ bệnh án điện tử (EHR) có yêu cầu mã hóa bảo mật AES-256 theo Thông tư 46/2018/TT-BYT và gửi tin nhắn Zalo ZNS/Email nhắc lịch uống thuốc không?\\n" +
+                                       "3. Đội ngũ của bạn gồm những ai đảm nhiệm vai trò gì và bạn kỳ vọng hoàn thành trong bao nhiêu Sprint?\\n\\n" +
+                                       "👉 Bạn vui lòng nhắn tin phản hồi trong khung chat bên dưới để tôi khởi tạo danh sách Tasks nhé!";
+                } else if (promptLower.contains("đồ án") || promptLower.contains("khóa luận") || promptLower.contains("iuh")) {
+                    dynamicQuestions = "Chào bạn! Tôi là Requirement Agent (PO/BA) phụ trách dự án QUẢN LÝ ĐỒ ÁN KHÓA LUẬN. Để bóc tách WBS Tasks chuẩn quy trình Khoa CNTT - IUH, tôi cần trao đổi 3 câu hỏi:\\n" +
+                                       "1. Quy trình đăng ký và duyệt đề tài có qua Trưởng bộ môn phê duyệt và phân công Giảng viên phản biện không?\\n" +
+                                       "2. Sinh viên nộp báo cáo tiến độ tuần có cần giới hạn file PDF/DOCX và chấm điểm điện tử trực tiếp trên hệ thống không?\\n" +
+                                       "3. Đội ngũ phát triển dự án của bạn gồm những ai đảm nhiệm vai trò gì?\\n\\n" +
+                                       "👉 Bạn vui lòng nhắn tin phản hồi trong khung chat để tôi bắt đầu bóc tách Tasks nhé!";
+                } else {
+                    dynamicQuestions = "Chào bạn! Tôi là Requirement Agent (PO/BA) của hệ thống PROGA. Tôi đã nhận được bài toán phát triển của bạn. Để hỗ trợ bóc tách danh sách WBS Tasks chính xác và phù hợp nhất với dự án, bạn vui lòng cho tôi biết thêm 3 thông tin sau:\\n" +
+                                       "1. Đội ngũ phát triển của bạn gồm bao nhiêu người và phân vai ra sao (vd: Ai làm Backend, Frontend, QA)?\\n" +
+                                       "2. Hệ thống có yêu cầu bảo mật, thanh toán hoặc tích hợp bên thứ ba nào đặc thù không (vd: VNPay, MoMo, OAuth2, WebRTC)?\\n" +
+                                       "3. Bạn dự kiến triển khai dự án trong bao nhiêu Sprint hoặc thời gian là bao nhiêu lâu?\\n\\n" +
+                                       "👉 Bạn vui lòng nhắn tin phản hồi lại các thông tin trên trong khung chat để tôi bắt đầu bóc tách danh sách Tasks nhé!";
+                }
+
+                return String.format("""
                     {
-                      "summary": "Chào bạn! Tôi là Requirement Agent (PO/BA) của hệ thống PROGA. Tôi đã nhận được bài toán phát triển của bạn. Để hỗ trợ bóc tách danh sách WBS Tasks chính xác và phù hợp nhất với dự án, bạn vui lòng cho tôi biết thêm 3 thông tin sau:\\n1. Đội ngũ phát triển của bạn gồm bao nhiêu người và phân vai ra sao (vd: Ai làm Backend, Frontend, QA)?\\n2. Hệ thống có yêu cầu bảo mật, thanh toán hoặc tích hợp bên thứ ba nào đặc thù không (vd: VNPay, MoMo, OAuth2, WebRTC)?\\n3. Bạn dự kiến triển khai dự án trong bao nhiêu Sprint hoặc thời gian là bao nhiêu lâu?\\n\\n👉 Bạn vui lòng nhắn tin phản hồi lại các thông tin trên trong khung chat bên dưới để tôi bắt đầu bóc tách danh sách Tasks nhé!",
+                      "summary": "%s",
                       "sourceReference": "PMBOK 7th Edition Agile Standards",
                       "sourceUrl": "https://www.atlassian.com/agile/project-management/work-breakdown-structure",
                       "tasks": []
                     }
-                    """;
+                    """, dynamicQuestions);
             }
 
             String promptLower = userPrompt.toLowerCase();
