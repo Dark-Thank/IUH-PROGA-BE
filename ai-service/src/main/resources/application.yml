@@ -4,6 +4,15 @@ server:
 spring:
   application:
     name: ai-service
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.autoconfigure.vectorstore.azure.AzureVectorStoreAutoConfiguration
+  ai:
+    openai:
+      api-key: ${GEMINI_API_KEY:${OPENAI_API_KEY:demo_key_proga_ai}}
+      chat:
+        options:
+          model: gpt-4o-mini
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/proga_ai_db}
     username: ${DB_USERNAME:postgres}

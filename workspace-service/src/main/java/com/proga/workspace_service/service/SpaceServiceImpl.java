@@ -40,11 +40,11 @@ public class SpaceServiceImpl implements SpaceService {
 
         Space saved = spaceRepository.save(space);
 
-        // Mặc định tự tạo 1 Sprint tên "Sprint 1" cho Space mới
+        // Mặc định tự tạo 1 Sprint 0 (Kickoff & Setup) cho Space mới để không bao giờ bị trùng với Sprint 1 của AI
         Sprint defaultSprint = Sprint.builder()
                 .spaceId(saved.getId())
-                .name("Sprint 1")
-                .goal("Sprint khởi tạo mặc định cho Space " + saved.getName())
+                .name("Sprint 0: Kickoff & Setup")
+                .goal("Sprint khởi tạo môi trường & lên kế hoạch cho Space " + saved.getName())
                 .status(SprintStatus.ACTIVE)
                 .startDate(saved.getStartDate())
                 .endDate(saved.getEndDate())

@@ -23,6 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -115,6 +117,56 @@ public class AiServiceImpl implements AiService {
         return mapToMessageResponse(assistantMsg);
     }
 
+    private List<Map<String, Object>> ragSamples = new ArrayList<>();
+
+    @jakarta.annotation.PostConstruct
+    public void initRagKnowledgeBase() {
+        try (InputStream is = getClass().getResourceAsStream("/rag/task_decomposition_samples.json")) {
+            if (is != null) {
+                String json = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                ragSamples = objectMapper.readValue(json, new TypeReference<List<Map<String, Object>>>() {});
+                log.info("Successfully loaded {} RAG Task Decomposition sample datasets into AI-Service memory.", ragSamples.size());
+            } else {
+                log.warn("RAG sample dataset file /rag/task_decomposition_samples.json not found.");
+            }
+        } catch (Exception e) {
+            log.error("Failed to load RAG sample dataset: {}", e.getMessage(), e);
+        }
+    }
+
+    private Map<String, Object> findBestMatchingRagSample(String userRequirement) {
+        if (ragSamples.isEmpty()) return null;
+        if (userRequirement == null || userRequirement.isBlank()) return ragSamples.get(0);
+
+        String reqLower = userRequirement.toLowerCase();
+        Map<String, Object> bestSample = ragSamples.get(0);
+        int maxScore = -1;
+
+        for (Map<String, Object> sample : ragSamples) {
+            String domain = (String) sample.getOrDefault("domain", "");
+            String title = (String) sample.getOrDefault("title", "");
+            String reqText = (String) sample.getOrDefault("requirementText", "");
+            String combinedText = (domain + " " + title + " " + reqText).toLowerCase();
+
+            int score = 0;
+            String[] keywords = reqLower.split("\\s+");
+            for (String kw : keywords) {
+                if (kw.length() > 2 && combinedText.contains(kw)) {
+                    score += 1;
+                }
+            }
+
+            if (score > maxScore) {
+                maxScore = score;
+                bestSample = sample;
+            }
+        }
+
+        log.info("RAG Similarity Search selected sample: '{}' (Score: {}) for requirement: '{}'",
+                bestSample.get("title"), maxScore, userRequirement);
+        return bestSample;
+    }
+
     @Override
     @Transactional
     public TaskDecompositionResponse decomposeRequirements(TaskDecompositionRequest request) {
@@ -127,15 +179,28 @@ public class AiServiceImpl implements AiService {
                 .messageContent("Phân rã yêu cầu bài toán:\n" + request.getRequirementText())
                 .build());
 
-        String systemPrompt = """
+        // Perform RAG Similarity Retrieval
+        Map<String, Object> matchedRagSample = findBestMatchingRagSample(request.getRequirementText());
+        String sampleJsonContext = "";
+        if (matchedRagSample != null) {
+            try {
+                sampleJsonContext = objectMapper.writeValueAsString(matchedRagSample);
+            } catch (Exception ignored) {}
+        }
+
+        String systemPrompt = String.format("""
                 Bạn là một Requirement Agent (Product Owner / Business Analyst) chuyên nghiệp cho hệ thống quản lý dự án PROGA.
-                Nhiệm vụ của bạn là phân rã yêu cầu bài toán được cung cấp thành danh sách các Task nhỏ cụ thể, sẵn sàng cho lập trình viên thực hiện.
+                Nhiệm vụ của bạn là phân rã yêu cầu bài toán được cung cấp thành danh sách từ 10 - 25 Task cụ thể, được phân bổ theo thứ tự các Sprint phù hợp (Sprint 1, Sprint 2, ... số lượng Sprint linh hoạt tùy theo quy mô bài toán, có thể là 3, 4, 5 hoặc nhiều hơn).
+                
+                ĐÂY LÀ MẪU DỮ LIỆU TRI THỨC RAG TƯƠNG ĐỒNG ĐƯỢC RÚT RA TỪ KHO TRI THỨC ĐỂ BẠN HỌC THEO:
+                %s
                 
                 Hãy trả về dữ liệu duy nhất dưới dạng JSON với cấu trúc chính xác sau:
                 {
                   "summary": "Tóm tắt ngắn gọn các hạng mục công việc được phân rã",
                   "tasks": [
                     {
+                      "sprint": "Sprint 1: Tên Sprint",
                       "title": "Tên task ngắn gọn rõ ràng",
                       "description": "Mô tả công việc chi tiết",
                       "priority": "HIGH / MEDIUM / LOW / URGENT",
@@ -143,7 +208,7 @@ public class AiServiceImpl implements AiService {
                     }
                   ]
                 }
-                """;
+                """, sampleJsonContext);
 
         String userPrompt = "Yêu cầu bài toán:\n" + request.getRequirementText();
         String rawResponse = callAiModel(systemPrompt, userPrompt);
@@ -161,6 +226,7 @@ public class AiServiceImpl implements AiService {
 
             List<TaskDecompositionResponse.DecomposedTaskItem> taskItems = tasksRaw.stream().map(t -> 
                 TaskDecompositionResponse.DecomposedTaskItem.builder()
+                        .sprint((String) t.getOrDefault("sprint", "Sprint 1"))
                         .title((String) t.get("title"))
                         .description((String) t.get("description"))
                         .priority((String) t.getOrDefault("priority", "MEDIUM"))
@@ -177,32 +243,37 @@ public class AiServiceImpl implements AiService {
             jsonPayloadStr = objectMapper.writeValueAsString(taskItems);
 
         } catch (Exception e) {
-            log.error("Error parsing AI JSON response, generating fallback structure: {}", e.getMessage());
-            // Fallback response
-            List<TaskDecompositionResponse.DecomposedTaskItem> fallbackItems = List.of(
-                    TaskDecompositionResponse.DecomposedTaskItem.builder()
-                            .title("Phân tích & Thiết kế giao diện / API cho yêu cầu")
-                            .description(request.getRequirementText())
-                            .priority("HIGH")
-                            .estimatedDays(2)
-                            .build(),
-                    TaskDecompositionResponse.DecomposedTaskItem.builder()
-                            .title("Triển khai chức năng Backend & Database schema")
-                            .description("Xây dựng API RESTful và lưu trữ dữ liệu theo yêu cầu")
-                            .priority("HIGH")
-                            .estimatedDays(3)
-                            .build(),
-                    TaskDecompositionResponse.DecomposedTaskItem.builder()
-                            .title("Kiểm thử & Tích hợp Frontend")
-                            .description("Đảm bảo các API hoạt động đúng và giao diện hoàn thiện")
-                            .priority("MEDIUM")
-                            .estimatedDays(2)
-                            .build()
-            );
+            log.error("Error parsing AI JSON response, generating RAG fallback structure: {}", e.getMessage());
+            
+            // Rich RAG Fallback Response using matched sample
+            List<TaskDecompositionResponse.DecomposedTaskItem> fallbackItems = new ArrayList<>();
+            String fallbackSummary = "Đã phân rã bài toán dựa trên kho tri thức RAG";
+
+            if (matchedRagSample != null && matchedRagSample.containsKey("tasks")) {
+                fallbackSummary = (String) matchedRagSample.getOrDefault("summary", fallbackSummary);
+                List<Map<String, Object>> sampleTasks = (List<Map<String, Object>>) matchedRagSample.get("tasks");
+                for (Map<String, Object> st : sampleTasks) {
+                    fallbackItems.add(TaskDecompositionResponse.DecomposedTaskItem.builder()
+                            .sprint((String) st.getOrDefault("sprint", "Sprint 1"))
+                            .title((String) st.get("title"))
+                            .description((String) st.get("description"))
+                            .priority((String) st.getOrDefault("priority", "HIGH"))
+                            .estimatedDays(st.get("estimatedDays") != null ? ((Number) st.get("estimatedDays")).intValue() : 2)
+                            .build());
+                }
+            } else {
+                fallbackItems.add(TaskDecompositionResponse.DecomposedTaskItem.builder()
+                        .sprint("Sprint 1")
+                        .title("Phân tích & Thiết kế Schema Cơ sở dữ liệu")
+                        .description("Tạo sơ đồ ERD và DDL cho các bảng trong hệ thống")
+                        .priority("URGENT")
+                        .estimatedDays(3)
+                        .build());
+            }
 
             responseObj = TaskDecompositionResponse.builder()
                     .threadId(thread.getId())
-                    .summary("Tự động phân rã yêu cầu bài toán thành 3 task cơ bản")
+                    .summary(fallbackSummary)
                     .tasks(fallbackItems)
                     .build();
 
