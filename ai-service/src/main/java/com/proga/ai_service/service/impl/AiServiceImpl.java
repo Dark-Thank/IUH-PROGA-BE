@@ -23,6 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -115,37 +117,166 @@ public class AiServiceImpl implements AiService {
         return mapToMessageResponse(assistantMsg);
     }
 
+    private List<Map<String, Object>> ragSamples = new ArrayList<>();
+
+    @jakarta.annotation.PostConstruct
+    public void initRagKnowledgeBase() {
+        try (InputStream is = getClass().getResourceAsStream("/rag/task_decomposition_samples.json")) {
+            if (is != null) {
+                String json = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                ragSamples = objectMapper.readValue(json, new TypeReference<List<Map<String, Object>>>() {});
+                log.info("Successfully loaded {} RAG Task Decomposition sample datasets into AI-Service memory.", ragSamples.size());
+            } else {
+                log.warn("RAG sample dataset file /rag/task_decomposition_samples.json not found.");
+            }
+        } catch (Exception e) {
+            log.error("Failed to load RAG sample dataset: {}", e.getMessage(), e);
+        }
+    }
+
+    private Map<String, Object> findBestMatchingRagSample(String userRequirement) {
+        if (ragSamples.isEmpty()) return null;
+        if (userRequirement == null || userRequirement.isBlank()) return null;
+
+        String reqLower = userRequirement.toLowerCase();
+        Map<String, Object> bestSample = null;
+        int maxScore = 0;
+
+        for (Map<String, Object> sample : ragSamples) {
+            String domain = (String) sample.getOrDefault("domain", "");
+            String title = (String) sample.getOrDefault("title", "");
+            String reqText = (String) sample.getOrDefault("requirementText", "");
+            String combinedText = (domain + " " + title + " " + reqText).toLowerCase();
+
+            int score = 0;
+            String[] keywords = reqLower.split("\\s+");
+            for (String kw : keywords) {
+                if (kw.length() > 2 && combinedText.contains(kw)) {
+                    score += 1;
+                }
+            }
+
+            if (score > maxScore) {
+                maxScore = score;
+                bestSample = sample;
+            }
+        }
+
+        if (bestSample != null) {
+            log.info("RAG Similarity Search selected sample: '{}' (Score: {}) for requirement: '{}'",
+                    bestSample.get("title"), maxScore, userRequirement);
+        } else {
+            log.info("RAG Similarity Search found no direct static sample match for: '{}'. Proceeding with AI prompt engineering.", userRequirement);
+        }
+        return bestSample;
+    }
+
     @Override
     @Transactional
     public TaskDecompositionResponse decomposeRequirements(TaskDecompositionRequest request) {
-        AiThreadResponse thread = getOrCreateThread(request.getSpaceId(), AgentType.REQUIREMENT);
+        AiThread thread;
+        if (request.getThreadId() != null && request.getThreadId() > 0) {
+            thread = threadRepository.findById(request.getThreadId())
+                    .orElseGet(() -> threadRepository.save(
+                            AiThread.builder()
+                                    .spaceId(request.getSpaceId())
+                                    .agentType(AgentType.REQUIREMENT)
+                                    .openaiThreadId("thread_" + UUID.randomUUID().toString())
+                                    .build()
+                    ));
+        } else {
+            // Always create a BRAND NEW thread when starting a new conversation session
+            thread = threadRepository.save(
+                    AiThread.builder()
+                            .spaceId(request.getSpaceId())
+                            .agentType(AgentType.REQUIREMENT)
+                            .openaiThreadId("thread_" + UUID.randomUUID().toString())
+                            .build()
+            );
+        }
 
-        // Save User Prompt
+        // Fetch existing message history in this specific thread BEFORE saving current prompt
+        List<AiChatMessage> existingMsgs = messageRepository.findByThreadIdOrderByCreatedAtAsc(thread.getId());
+        boolean isFirstTurn = existingMsgs.isEmpty();
+
+        // Save User Prompt into Thread
         messageRepository.save(AiChatMessage.builder()
                 .threadId(thread.getId())
                 .senderType(SenderType.USER)
-                .messageContent("Phân rã yêu cầu bài toán:\n" + request.getRequirementText())
+                .messageContent(request.getRequirementText())
                 .build());
 
-        String systemPrompt = """
-                Bạn là một Requirement Agent (Product Owner / Business Analyst) chuyên nghiệp cho hệ thống quản lý dự án PROGA.
-                Nhiệm vụ của bạn là phân rã yêu cầu bài toán được cung cấp thành danh sách các Task nhỏ cụ thể, sẵn sàng cho lập trình viên thực hiện.
+        // Perform RAG Similarity Retrieval
+        Map<String, Object> matchedRagSample = findBestMatchingRagSample(request.getRequirementText());
+        String sampleJsonContext = "";
+        if (matchedRagSample != null) {
+            try {
+                sampleJsonContext = objectMapper.writeValueAsString(matchedRagSample);
+            } catch (Exception ignored) {}
+        }
+
+        // Extract source references from RAG sample
+        String ragSourceRef = matchedRagSample != null ? (String) matchedRagSample.getOrDefault("sourceReference", "Quy trình Đồ án Khoa CNTT IUH & IEEE Std 12207") : "PMBOK 7th Edition Agile Standards";
+        String ragSourceUrl = matchedRagSample != null ? (String) matchedRagSample.getOrDefault("sourceUrl", "https://fit.iuh.edu.vn/") : "https://www.atlassian.com/agile/project-management/work-breakdown-structure";
+
+        String systemPrompt;
+        if (isFirstTurn) {
+            // Turn 1: Clarification & Interview Phase (DO NOT GENERATE TASKS YET!)
+            systemPrompt = String.format("""
+                Bạn là một Requirement Agent (Product Owner / Business Analyst) chuyên nghiệp cho hệ thống PROGA.
+                ĐÂY LÀ LƯỢT ĐÀM THOẠI ĐẦU TIÊN để làm rõ phạm vi bài toán với người dùng.
+                Nhiệm vụ của bạn:
+                1. Chào mừng người dùng và xác nhận đã nhận được mô tả bài toán.
+                2. Đưa ra 3 CÂU HỎI LÀM RÕ CỤ THỂ bằng văn bản trong trường 'summary':
+                   - Hỏi về thành viên trong team và phân vai (vd: Ai làm Backend, Frontend, QA?).
+                   - Hỏi về yêu cầu bảo mật, thanh toán hoặc tích hợp đặc thù (vd: VNPay, MoMo, JWT?).
+                   - Hỏi về số lượng Sprint hoặc thời gian kỳ vọng triển khai.
+                3. BẮT BUỘC TRẢ VỀ MẢNG 'tasks': [] RỖNG NGUYÊN BẢN (KHÔNG TẠO BẤT KỲ TASK NÀO Ở LƯỢT NÀY!).
                 
-                Hãy trả về dữ liệu duy nhất dưới dạng JSON với cấu trúc chính xác sau:
+                YÊU CẦU ĐỊNH DẠNG ĐẦU RA STRICT JSON:
                 {
-                  "summary": "Tóm tắt ngắn gọn các hạng mục công việc được phân rã",
+                  "summary": "Lời chào và 3 câu hỏi đàm thoại chi tiết gửi đến người dùng",
+                  "sourceReference": "%s",
+                  "sourceUrl": "%s",
+                  "tasks": []
+                }
+                """, ragSourceRef, ragSourceUrl);
+        } else {
+            // Turn 2+: Task Breakdown Phase (User has provided context / answered questions)
+            systemPrompt = String.format("""
+                Bạn là một Requirement Agent (Product Owner / Business Analyst) chuyên nghiệp cho hệ thống PROGA.
+                CẢNH BÁO TỐI CAO: BẠN BẮT BUỘC BÓC TÁCH TASK DỰA TRÊN CHÍNH NGÀNH NGHỀ BÀI TOÁN CỦA NGƯỜI DÙNG.
+                NẾU YÊU CẦU LÀ Y TẾ / TELEHEALTH / BÁC SĨ / BỆNH NHÂN / BỆNH ÁN ĐIỆN TỬ, BẠN BẮT BUỘC PHẢI TẠO CÁC TASK VỀ Y TẾ VÀ TELEHEALTH (Ví dụ: WebRTC Video Call, Đặt lịch khám bác sĩ, Đơn thuốc điện tử mã hóa AES-256). TUYỆT ĐỐI KHÔNG ĐƯỢC TẠO CÁC TASK VỀ BÁN HÀNG / E-COMMERCE!
+                
+                Người dùng đã đàm thoại và bổ sung chi tiết yêu cầu. Bây giờ hãy bóc tách danh sách từ 10 - 25 Task cụ thể theo Sprint 1 tuần (5-7 ngày làm việc).
+                NẾU TRONG NỘI DUNG NÊU TÊN THÀNH VIÊN VÀ VAI TRÒ (ví dụ: 'Nam làm Backend, Linh làm Frontend, Tuấn làm QA'), BẠN BẮT BUỘC ĐIỀN TÊN THÀNH VIÊN ĐÓ VÀO TRƯỜNG suggestedMemberName.
+                
+                ĐÂY LÀ MẪU DỮ LIỆU TRI THỨC RAG TƯƠNG ĐỒNG CHỈ DÙNG THAM KHẢO CẤU TRÚC JSON (%s):
+                %s
+                
+                YÊU CẦU ĐỊNH DẠNG ĐẦU RA STRICT JSON:
+                {
+                  "summary": "Tóm tắt ngắn gọn việc bóc tách danh sách WBS Tasks dựa trên đàm thoại",
+                  "sourceReference": "%s",
+                  "sourceUrl": "%s",
                   "tasks": [
                     {
+                      "sprint": "Sprint 1: Tên Sprint",
                       "title": "Tên task ngắn gọn rõ ràng",
                       "description": "Mô tả công việc chi tiết",
                       "priority": "HIGH / MEDIUM / LOW / URGENT",
-                      "estimatedDays": 2
+                      "estimatedDays": 3,
+                      "bufferDays": 1,
+                      "assignedRole": "Backend Developer / Frontend Developer / DevOps / QA Lead / Tech Lead / BA",
+                      "suggestedMemberName": "Tên thành viên nếu người dùng nêu tên (ví dụ: Nam / Linh)",
+                      "riskWarning": "Cảnh báo rủi ro ngắn gọn (Chỉ điền nếu priority là URGENT hoặc HIGH, để null nếu bình thường)"
                     }
                   ]
                 }
-                """;
+                """, ragSourceRef, sampleJsonContext, ragSourceRef, ragSourceUrl);
+        }
 
-        String userPrompt = "Yêu cầu bài toán:\n" + request.getRequirementText();
+        String userPrompt = "Nội dung người dùng gửi:\n" + request.getRequirementText();
         String rawResponse = callAiModel(systemPrompt, userPrompt);
 
         TaskDecompositionResponse responseObj;
@@ -157,52 +288,87 @@ public class AiServiceImpl implements AiService {
             Map<String, Object> parsed = objectMapper.readValue(cleanedJson, new TypeReference<Map<String, Object>>() {});
             
             String summary = (String) parsed.getOrDefault("summary", "Đã phân rã yêu cầu thành công");
-            List<Map<String, Object>> tasksRaw = (List<Map<String, Object>>) parsed.getOrDefault("tasks", Collections.emptyList());
+            String respSourceRef = (String) parsed.getOrDefault("sourceReference", ragSourceRef);
+            String respSourceUrl = (String) parsed.getOrDefault("sourceUrl", ragSourceUrl);
+            List<TaskDecompositionResponse.DecomposedTaskItem> taskItems;
 
-            List<TaskDecompositionResponse.DecomposedTaskItem> taskItems = tasksRaw.stream().map(t -> 
-                TaskDecompositionResponse.DecomposedTaskItem.builder()
-                        .title((String) t.get("title"))
-                        .description((String) t.get("description"))
-                        .priority((String) t.getOrDefault("priority", "MEDIUM"))
-                        .estimatedDays(t.get("estimatedDays") != null ? ((Number) t.get("estimatedDays")).intValue() : 1)
-                        .build()
-            ).collect(Collectors.toList());
+            if (isFirstTurn) {
+                // TURN 1 GUARANTEE: Strictly return empty tasks array, forcing AI to ask clarifying questions first!
+                taskItems = Collections.emptyList();
+                if (summary == null || summary.isBlank() || summary.contains("Đã phân rã")) {
+                    summary = "Chào bạn! Tôi là Requirement Agent (PO/BA). Để hỗ trợ bóc tách danh sách WBS Tasks chính xác nhất cho dự án của bạn, tôi cần làm rõ 3 thông tin sau:\n" +
+                              "1. Đội ngũ phát triển của bạn gồm bao nhiêu người và phân vai ra sao (ví dụ: Ai làm Backend, Frontend, QA)?\n" +
+                              "2. Dự án có tiêu chuẩn bảo mật/thanh toán hoặc tích hợp bên thứ ba nào đặc thù không (ví dụ: VNPay, MoMo, OAuth2)?\n" +
+                              "3. Thời gian triển khai dự kiến hoặc số lượng Sprint bạn kỳ vọng là bao nhiêu?\n\n" +
+                              "👉 Bạn vui lòng nhắn tin phản hồi lại các thông tin trên trong khung chat bên dưới để tôi bắt đầu bóc tách danh sách Tasks nhé!";
+                }
+            } else {
+                List<Map<String, Object>> tasksRaw = (List<Map<String, Object>>) parsed.getOrDefault("tasks", Collections.emptyList());
+                taskItems = tasksRaw.stream().map(t -> 
+                    TaskDecompositionResponse.DecomposedTaskItem.builder()
+                            .sprint((String) t.getOrDefault("sprint", "Sprint 1"))
+                            .title((String) t.get("title"))
+                            .description((String) t.get("description"))
+                            .priority((String) t.getOrDefault("priority", "MEDIUM"))
+                            .estimatedDays(t.get("estimatedDays") != null ? ((Number) t.get("estimatedDays")).intValue() : 2)
+                            .bufferDays(t.get("bufferDays") != null ? ((Number) t.get("bufferDays")).intValue() : 0)
+                            .assignedRole((String) t.getOrDefault("assignedRole", (String) t.getOrDefault("recommendedRole", "Backend Developer")))
+                            .suggestedMemberName((String) t.get("suggestedMemberName"))
+                            .riskWarning((String) t.get("riskWarning"))
+                            .build()
+                ).collect(Collectors.toList());
+            }
 
             responseObj = TaskDecompositionResponse.builder()
                     .threadId(thread.getId())
                     .summary(summary)
+                    .sourceReference(respSourceRef)
+                    .sourceUrl(respSourceUrl)
                     .tasks(taskItems)
                     .build();
 
             jsonPayloadStr = objectMapper.writeValueAsString(taskItems);
 
         } catch (Exception e) {
-            log.error("Error parsing AI JSON response, generating fallback structure: {}", e.getMessage());
-            // Fallback response
-            List<TaskDecompositionResponse.DecomposedTaskItem> fallbackItems = List.of(
-                    TaskDecompositionResponse.DecomposedTaskItem.builder()
-                            .title("Phân tích & Thiết kế giao diện / API cho yêu cầu")
-                            .description(request.getRequirementText())
-                            .priority("HIGH")
-                            .estimatedDays(2)
-                            .build(),
-                    TaskDecompositionResponse.DecomposedTaskItem.builder()
-                            .title("Triển khai chức năng Backend & Database schema")
-                            .description("Xây dựng API RESTful và lưu trữ dữ liệu theo yêu cầu")
-                            .priority("HIGH")
-                            .estimatedDays(3)
-                            .build(),
-                    TaskDecompositionResponse.DecomposedTaskItem.builder()
-                            .title("Kiểm thử & Tích hợp Frontend")
-                            .description("Đảm bảo các API hoạt động đúng và giao diện hoàn thiện")
-                            .priority("MEDIUM")
-                            .estimatedDays(2)
-                            .build()
-            );
+            log.error("Error parsing AI JSON response, generating RAG fallback structure: {}", e.getMessage());
+            
+            // Rich RAG Fallback Response using matched sample
+            List<TaskDecompositionResponse.DecomposedTaskItem> fallbackItems = new ArrayList<>();
+            String fallbackSummary = "Đã phân rã bài toán dựa trên kho tri thức RAG";
+
+            if (matchedRagSample != null && matchedRagSample.containsKey("tasks")) {
+                fallbackSummary = (String) matchedRagSample.getOrDefault("summary", fallbackSummary);
+                List<Map<String, Object>> sampleTasks = (List<Map<String, Object>>) matchedRagSample.get("tasks");
+                for (Map<String, Object> st : sampleTasks) {
+                    fallbackItems.add(TaskDecompositionResponse.DecomposedTaskItem.builder()
+                            .sprint((String) st.getOrDefault("sprint", "Sprint 1"))
+                            .title((String) st.get("title"))
+                            .description((String) st.get("description"))
+                            .priority((String) st.getOrDefault("priority", "HIGH"))
+                            .estimatedDays(st.get("estimatedDays") != null ? ((Number) st.get("estimatedDays")).intValue() : 2)
+                            .bufferDays(st.get("bufferDays") != null ? ((Number) st.get("bufferDays")).intValue() : 0)
+                            .assignedRole((String) st.getOrDefault("assignedRole", "Backend Developer"))
+                            .riskWarning((String) st.get("riskWarning"))
+                            .build());
+                }
+            } else {
+                fallbackItems.add(TaskDecompositionResponse.DecomposedTaskItem.builder()
+                        .sprint("Sprint 1")
+                        .title("Phân tích & Thiết kế Schema Cơ sở dữ liệu")
+                        .description("Tạo sơ đồ ERD và DDL cho các bảng trong hệ thống")
+                        .priority("URGENT")
+                        .estimatedDays(3)
+                        .bufferDays(1)
+                        .assignedRole("Database Architect")
+                        .riskWarning("Cần kiểm tra kỹ ràng buộc để tránh lỗi về sau")
+                        .build());
+            }
 
             responseObj = TaskDecompositionResponse.builder()
                     .threadId(thread.getId())
-                    .summary("Tự động phân rã yêu cầu bài toán thành 3 task cơ bản")
+                    .summary(fallbackSummary)
+                    .sourceReference(ragSourceRef)
+                    .sourceUrl(ragSourceUrl)
                     .tasks(fallbackItems)
                     .build();
 
@@ -373,6 +539,186 @@ public class AiServiceImpl implements AiService {
     }
 
     private String generateMockAiResponse(String systemPrompt, String userPrompt) {
+        if (systemPrompt.contains("Requirement Agent")) {
+            if (systemPrompt.contains("LƯỢT ĐÀM THOẠI ĐẦU TIÊN")) {
+                return """
+                    {
+                      "summary": "Chào bạn! Tôi là Requirement Agent (PO/BA) của hệ thống PROGA. Tôi đã nhận được bài toán phát triển của bạn. Để hỗ trợ bóc tách danh sách WBS Tasks chính xác và phù hợp nhất với dự án, bạn vui lòng cho tôi biết thêm 3 thông tin sau:\\n1. Đội ngũ phát triển của bạn gồm bao nhiêu người và phân vai ra sao (vd: Ai làm Backend, Frontend, QA)?\\n2. Hệ thống có yêu cầu bảo mật, thanh toán hoặc tích hợp bên thứ ba nào đặc thù không (vd: VNPay, MoMo, OAuth2, WebRTC)?\\n3. Bạn dự kiến triển khai dự án trong bao nhiêu Sprint hoặc thời gian là bao nhiêu lâu?\\n\\n👉 Bạn vui lòng nhắn tin phản hồi lại các thông tin trên trong khung chat bên dưới để tôi bắt đầu bóc tách danh sách Tasks nhé!",
+                      "sourceReference": "PMBOK 7th Edition Agile Standards",
+                      "sourceUrl": "https://www.atlassian.com/agile/project-management/work-breakdown-structure",
+                      "tasks": []
+                    }
+                    """;
+            }
+
+            String promptLower = userPrompt.toLowerCase();
+
+            // Domain: Restaurant Management (Nhà hàng, Gọi món, Thực đơn, Đặt bàn)
+            if (promptLower.contains("nhà hàng") || promptLower.contains("quản lý bàn") || promptLower.contains("thực đơn") || promptLower.contains("gọi món") || promptLower.contains("pos")) {
+                return """
+                    {
+                      "summary": "Phân rã hệ thống Quản lý Nhà hàng & Gọi món tại bàn thành các WBS Tasks chuẩn theo Sprint.",
+                      "sourceReference": "Enterprise POS & Restaurant Architecture Standards",
+                      "sourceUrl": "https://www.atlassian.com/agile/project-management/work-breakdown-structure",
+                      "tasks": [
+                        {
+                          "sprint": "Sprint 1",
+                          "title": "Thiết kế Schema Database Bàn ăn, Thực đơn & Đơn món",
+                          "description": "Xây dựng DDL các bảng tables, categories, menu_items, order_bills, payment_transactions.",
+                          "priority": "URGENT",
+                          "estimatedDays": 3,
+                          "bufferDays": 1,
+                          "assignedRole": "Database Architect",
+                          "riskWarning": "Cần thiết kế khóa ngoại chặt chẽ giữa đơn món và bàn ăn để tránh xung đột trạng thái bàn."
+                        },
+                        {
+                          "sprint": "Sprint 1",
+                          "title": "Xây dựng Module Quản lý Sơ Đồ Bàn Ăn & Trạng Thái Bàn Trực Tuyến",
+                          "description": "Màn hình sơ đồ bàn ăn thời gian thực theo khu vực (Tầng 1, Tầng 2, VIP).",
+                          "priority": "URGENT",
+                          "estimatedDays": 4,
+                          "bufferDays": 1,
+                          "assignedRole": "Fullstack Developer"
+                        },
+                        {
+                          "sprint": "Sprint 2",
+                          "title": "Phát triển Chức năng Khách Hàng Quét Mã QR Tại Bàn Để Gọi Món",
+                          "description": "Khách hàng quét mã QR dán tại bàn để xem Menu thực đơn và bấm chọn món.",
+                          "priority": "HIGH",
+                          "estimatedDays": 4,
+                          "bufferDays": 1,
+                          "assignedRole": "Frontend Developer"
+                        },
+                        {
+                          "sprint": "Sprint 2",
+                          "title": "Tích hợp Module POS Bán Hàng Cho Phục Vụ & Màn Hình Bếp (Kitchen Display)",
+                          "description": "Đơn món gửi từ bàn lập tức đẩy sang màn hình Bếp/Quầy pha chế theo WebSocket real-time.",
+                          "priority": "HIGH",
+                          "estimatedDays": 4,
+                          "bufferDays": 1,
+                          "assignedRole": "Backend Developer"
+                        },
+                        {
+                          "sprint": "Sprint 3",
+                          "title": "Tích hợp Cổng Thanh Toán VNPAY IPN Callback & Xuất Hóa Đơn Điện Tử",
+                          "description": "Khách hàng thanh toán tiền ăn tại bàn qua VNPAY QR và tự động in hóa đơn.",
+                          "priority": "HIGH",
+                          "estimatedDays": 3,
+                          "bufferDays": 0,
+                          "assignedRole": "Security & Backend Developer"
+                        }
+                      ]
+                    }
+                    """;
+            }
+
+            // Domain: Healthtech / Telehealth (Y tế, Bác sĩ, Bệnh nhân, Khám bệnh)
+            if (promptLower.contains("y tế") || promptLower.contains("telehealth") || promptLower.contains("bác sĩ") || promptLower.contains("bệnh nhân") || promptLower.contains("khám")) {
+                return """
+                    {
+                      "summary": "Phân rã hệ thống Y tế Số, Tư vấn Khám Bệnh Từ Xa Telehealth WebRTC và Hồ sơ Bệnh án Điện tử EHR.",
+                      "sourceReference": "Bộ Y tế Việt Nam - Thông tư 46/2018/TT-BYT về Hồ sơ Bệnh án Điện tử",
+                      "sourceUrl": "https://moh.gov.vn/",
+                      "tasks": [
+                        {
+                          "sprint": "Sprint 1",
+                          "title": "Thiết kế Schema Database Bác sĩ, Bệnh nhân, Lịch khám & Bệnh án Điện tử EHR",
+                          "description": "Xây dựng bảng doctors, patients, appointment_slots, medical_records, prescriptions.",
+                          "priority": "URGENT",
+                          "estimatedDays": 3,
+                          "bufferDays": 1,
+                          "assignedRole": "Database Architect",
+                          "riskWarning": "Dữ liệu bệnh án cá nhân (chẩn đoán, tiền sử bệnh) phải mã hóa AES-256 trước khi lưu DB."
+                        },
+                        {
+                          "sprint": "Sprint 1",
+                          "title": "Module Đặt Lịch Hẹn Khám Bác Sĩ & Thanh Toán Tiền Khám VNPAY",
+                          "description": "Bệnh nhân tìm bác sĩ theo chuyên khoa, chọn khung giờ trống và thanh toán đặt chỗ VNPAY.",
+                          "priority": "URGENT",
+                          "estimatedDays": 4,
+                          "bufferDays": 1,
+                          "assignedRole": "Backend Developer"
+                        },
+                        {
+                          "sprint": "Sprint 2",
+                          "title": "Module Tư Vấn Khám Từ Xa Telehealth Video Call WebRTC 1-1",
+                          "description": "Phòng gọi Video trực tiếp 1-1 giữa Bác sĩ và Bệnh nhân trên WebRTC kết hợp Chat gửi file xét nghiệm.",
+                          "priority": "HIGH",
+                          "estimatedDays": 4,
+                          "bufferDays": 1,
+                          "assignedRole": "Fullstack Developer"
+                        },
+                        {
+                          "sprint": "Sprint 2",
+                          "title": "Module Kê Đơn Thuốc Điện Tử & Mã Hóa AES-256 Hồ Sơ Bệnh Án Điện Tử",
+                          "description": "Bác sĩ tạo đơn thuốc điện tử trong ca khám và mã hóa lưu trữ hồ sơ bệnh án bệnh nhân an toàn.",
+                          "priority": "HIGH",
+                          "estimatedDays": 3,
+                          "bufferDays": 0,
+                          "assignedRole": "Security Specialist"
+                        },
+                        {
+                          "sprint": "Sprint 3",
+                          "title": "Tích hợp Service Nhắc Lịch Uống Thuốc Hàng Ngày qua Zalo ZNS & Email",
+                          "description": "Cron job tự động quét đơn thuốc và gửi tin nhắn Zalo ZNS / Email nhắc bệnh nhân uống thuốc đúng giờ.",
+                          "priority": "MEDIUM",
+                          "estimatedDays": 2,
+                          "bufferDays": 0,
+                          "assignedRole": "Backend Developer"
+                        }
+                      ]
+                    }
+                    """;
+            }
+
+            // Generic SaaS System Fallback
+            return """
+                {
+                  "summary": "Phân rã bài toán phần mềm theo tiêu chuẩn Kiến trúc Microservices & Agile Scrum.",
+                  "sourceReference": "PMBOK 7th Edition Agile Standards",
+                  "sourceUrl": "https://www.atlassian.com/agile/project-management/work-breakdown-structure",
+                  "tasks": [
+                    {
+                      "sprint": "Sprint 1",
+                      "title": "Phân tích Yêu cầu Nghiệp vụ & Thiết kế Schema Cơ sở Dữ liệu",
+                      "description": "Xây dựng biểu đồ ERD và viết DDL khởi tạo các bảng trong hệ thống.",
+                      "priority": "URGENT",
+                      "estimatedDays": 3,
+                      "bufferDays": 1,
+                      "assignedRole": "System Architect"
+                    },
+                    {
+                      "sprint": "Sprint 1",
+                      "title": "Triển khai Auth-Service & Phân Quyền Bảo Mật JWT RBAC",
+                      "description": "Tạo API Đăng nhập, Đăng ký, Quên mật khẩu và cấp Token JWT an toàn.",
+                      "priority": "HIGH",
+                      "estimatedDays": 3,
+                      "bufferDays": 0,
+                      "assignedRole": "Backend Developer"
+                    },
+                    {
+                      "sprint": "Sprint 2",
+                      "title": "Xây dựng Giao diện Dashboard Quản Trị Trực Quan",
+                      "description": "Thiết kế các biểu đồ thống kê chỉ số nghiệp vụ chính của hệ thống.",
+                      "priority": "HIGH",
+                      "estimatedDays": 4,
+                      "bufferDays": 1,
+                      "assignedRole": "Frontend Developer"
+                    },
+                    {
+                      "sprint": "Sprint 2",
+                      "title": "Tích hợp Cổng Thanh Toán Trực Tuyến VNPAY IPN Callback",
+                      "description": "Xử lý tạo mã QR thanh toán và xác nhận giao dịch tự động.",
+                      "priority": "HIGH",
+                      "estimatedDays": 3,
+                      "bufferDays": 0,
+                      "assignedRole": "Backend Developer"
+                    }
+                  ]
+                }
+                """;
+        }
+
         if (systemPrompt.contains("PM Agent")) {
             return """
                     ### 📊 BÁO CÁO TIẾN ĐỘ & RỦI RO SPACE

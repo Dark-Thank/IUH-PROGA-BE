@@ -26,6 +26,9 @@ public class AiThread {
     @Column(name = "space_id", nullable = false)
     private long spaceId;
 
+    @Column(name = "user_id")
+    private Long userId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "agent_type", length = 30, nullable = false)
     private AgentType agentType;
