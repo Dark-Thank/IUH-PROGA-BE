@@ -27,9 +27,9 @@ public class TaskDecompositionResponse {
         private String description;
         private String priority; // LOW, MEDIUM, HIGH, URGENT
         private Integer estimatedDays;
-        private Integer storyPoints; // Fibonacci: 1, 2, 3, 5, 8, 13
-        private String reasoning; // Chain-of-thought complexity explanation
-        private String recommendedRole; // Tech Lead, Frontend Dev, Backend Dev, DevOps, QA, BA
-        private String contingencyPlan; // Risk mitigation strategy
+        private Integer bufferDays; // Optional risk buffer days for complex tasks
+        private String assignedRole; // Backend Developer, Frontend Developer, DevOps, QA, Tech Lead, BA
+        private String suggestedMemberName; // Optional member name mapped from user chat prompt
+        private String riskWarning; // Risk warning only for URGENT/HIGH tasks
     }
 }

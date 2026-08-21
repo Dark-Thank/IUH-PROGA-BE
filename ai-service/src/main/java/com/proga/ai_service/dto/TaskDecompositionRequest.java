@@ -13,6 +13,8 @@ public class TaskDecompositionRequest {
     @NotNull(message = "Space ID is required")
     private Long spaceId;
 
+    private Long threadId; // Optional thread ID to maintain session continuity
+
     @NotBlank(message = "Requirement text is required")
     private String requirementText;
 }

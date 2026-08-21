@@ -1,188 +1,237 @@
 [
   {
     "id": "sample-01",
-    "domain": "Project Management & AI Agents",
-    "title": "Hệ thống Quản lý tiến độ dự án tích hợp AI Agents (IUH-PROGA)",
-    "requirementText": "Xây dựng hệ thống quản lý tiến độ dự án theo phương pháp Agile/Scrum tích hợp các AI Agents hỗ trợ phân rã việc tự động, tóm tắt tiến độ và tư vấn giải pháp kỹ thuật.",
-    "summary": "Phân rã dự án PROGA thành các task chi tiết theo chuẩn Scrum WBS (IEEE Std 12207 & PMBOK 7th Edition Agile Guidelines), gán Story Points (Fibonacci) và phân vai cụ thể cho từng thành viên.",
-    "sourceReference": "Atlassian Jira Software Architecture & IEEE Std 12207 Software Life Cycle Processes Blueprint",
-    "sourceUrl": "https://www.atlassian.com/agile/project-management/work-breakdown-structure",
+    "domain": "University Management & Capstone Projects",
+    "title": "Hệ thống Quản lý Đồ án & Khóa luận Tốt nghiệp Khoa CNTT - IUH (IUH FIT Capstone)",
+    "requirementText": "Xây dựng hệ thống quản lý Khóa luận Tốt nghiệp cho Khoa Công nghệ Thông tin - Trường ĐH Công nghiệp TP.HCM (IUH) hỗ trợ phân công Giảng viên Hướng dẫn, sinh viên nộp báo cáo tiến độ, chấm điểm phản biện và tổng hợp kết quả hội đồng.",
+    "summary": "Phân rã hệ thống Quản lý Khóa luận Tốt nghiệp IUH FIT thành các task chuẩn theo quy trình quản lý đồ án đại học (Khoa CNTT - IUH).",
+    "sourceReference": "Quy trình Đồ án & Khóa luận Tốt nghiệp - Khoa Công nghệ Thông tin IUH & IEEE Std 12207",
+    "sourceUrl": "https://fit.iuh.edu.vn/",
     "tasks": [
       {
         "sprint": "Sprint 1",
-        "title": "Thiết kế Schema Database PostgreSQL & Security JWT",
-        "description": "Tạo DDL các bảng users, workspaces, spaces, sprints, tasks, ai_threads, ai_chat_messages và cấu hình Spring Security JWT Gateway filter.",
+        "title": "Thiết kế Cấu trúc Database Sinh viên, Giảng viên & Đề tài",
+        "description": "Tạo DDL các bảng students, lecturers, topics, topic_registrations, evaluation_boards.",
         "priority": "URGENT",
         "estimatedDays": 3,
-        "storyPoints": 5,
-        "reasoning": "Cần đảm bảo toàn vẹn dữ liệu đa tenant (Workspace/Space Isolation) và bảo mật Token RSA/HMAC256.",
-        "recommendedRole": "Tech Lead / System Architect",
-        "contingencyPlan": "Sử dụng Docker PostgreSQL containerized để tự động hóa migration script Liquibase/Flyway."
+        "bufferDays": 1,
+        "assignedRole": "Backend Developer",
+        "riskWarning": "Cần đảm bảo ràng buộc 1 Giảng viên chỉ hướng dẫn tối đa 10 nhóm sinh viên theo quy định Khoa CNTT IUH."
       },
       {
         "sprint": "Sprint 1",
-        "title": "Đóng gói Docker Compose cho 5 Microservices",
-        "description": "Đóng gói PostgreSQL, Redis, Eureka, API Gateway và Auth Service.",
+        "title": "Triển khai Auth-Service & Phân quyền SSO Sinh viên / Giảng viên",
+        "description": "Tích hợp đăng nhập mã số sinh viên (MSSV) và mã giảng viên kèm phân quyền RBAC.",
         "priority": "HIGH",
-        "estimatedDays": 2,
-        "storyPoints": 3,
-        "reasoning": "Môi trường đồng nhất giữa Local và Staging, giảm rủi ro xung đột môi trường.",
-        "recommendedRole": "DevOps Engineer",
-        "contingencyPlan": "Dùng `.env` template cấu hình tham số mạng Docker riêng biệt."
+        "estimatedDays": 3,
+        "bufferDays": 0,
+        "assignedRole": "Backend Developer"
       },
       {
         "sprint": "Sprint 2",
-        "title": "Phát triển REST APIs CRUD Workspace & Space Access Control",
-        "description": "Tạo controller và service quản lý Workspace/Space kèm kiểm tra quyền Owner/Member.",
+        "title": "Phát triển Chức năng Đăng ký Đề tài Khóa luận Trực tuyến",
+        "description": "Sinh viên xem danh sách đề tài của các Bộ môn (Kỹ thuật phần mềm, Hệ thống thông tin, Khoa học máy tính) và nộp nguyện vọng đăng ký.",
         "priority": "HIGH",
-        "estimatedDays": 3,
-        "storyPoints": 3,
-        "reasoning": "Tạo nền tảng làm việc cho các nhóm dự án.",
-        "recommendedRole": "Senior Backend Developer",
-        "contingencyPlan": "Sử dụng Spring Data JPA Repositories chuẩn hóa với Specification Pattern."
+        "estimatedDays": 4,
+        "bufferDays": 1,
+        "assignedRole": "Frontend Developer"
       },
       {
         "sprint": "Sprint 2",
-        "title": "Xây dựng View Accordion Sprint & Drawer Edit Task",
-        "description": "Tạo UI hiển thị Accordion danh sách Task phân nhóm theo Sprint và slider panel xem/sửa công việc bên phải.",
+        "title": "Xây dựng Workflow Duyệt Đề tài của Trưởng Bộ Môn",
+        "description": "Màn hình dành cho Trưởng Bộ môn phê duyệt danh sách đề tài và phân công Giảng viên Phản biện.",
         "priority": "HIGH",
         "estimatedDays": 3,
-        "storyPoints": 3,
-        "reasoning": "Tăng trải nghiệm làm việc cho PM khi thao tác trên máy tính.",
-        "recommendedRole": "Frontend Developer",
-        "contingencyPlan": "Dùng React Component state local để render tức thì trước khi ghi xuống DB."
+        "bufferDays": 0,
+        "assignedRole": "Backend Developer"
       },
       {
         "sprint": "Sprint 3",
-        "title": "Xây dựng Bảng Kanban 3 Cột & Realtime Drag & Drop Task",
-        "description": "Hiển thị các card công việc theo trạng thái (TODO, IN_PROGRESS, DONE) hỗ trợ kéo thả dnd-kit và WebSocket STOMP.",
+        "title": "Module Nộp Báo Cáo Tiến Độ Hàng Tuần & Upload File Báo Cáo (.pdf/.docx)",
+        "description": "Sinh viên upload tiến độ báo cáo tuần, Giảng viên Hướng dẫn xem file và nhập phản hồi đánh giá.",
         "priority": "URGENT",
         "estimatedDays": 3,
-        "storyPoints": 8,
-        "reasoning": "Logic kéo thả dnd-kit kết hợp WebSocket broadcast đồng bộ real-time giữa các thành viên có độ phức tạp cao.",
-        "recommendedRole": "Fullstack Developer",
-        "contingencyPlan": "Sử dụng Optimistic UI update trên Frontend, nạp lại nếu kết nối WebSocket gián đoạn."
+        "bufferDays": 1,
+        "assignedRole": "Fullstack Developer",
+        "riskWarning": "Cần giới hạn dung lượng file nộp tối đa 50MB và quét mã độc trước khi lưu trữ Cloud storage."
       },
       {
-        "sprint": "Sprint 4",
-        "title": "Tích hợp Spring AI & PGVector Knowledge Base RAG",
-        "description": "Kích hoạt PGVector trong PostgreSQL, cấu hình VectorStore và nạp 15+ bộ tri thức WBS benchmark.",
-        "priority": "URGENT",
-        "estimatedDays": 4,
-        "storyPoints": 8,
-        "reasoning": "Cần cấu hình Vector Embedding Search (Cosine Similarity) chính xác để AI hiểu bài toán phần mềm.",
-        "recommendedRole": "AI / Data Engineer",
-        "contingencyPlan": "Dùng fallback RAG similarity search dựa trên từ khóa nếu mô hình Embedding bị quá tải quota."
-      },
-      {
-        "sprint": "Sprint 4",
-        "title": "Phát triển Requirement Clarification & Decomposition Co-Pilot Agent",
-        "description": "Viết API /agents/decompose nhận yêu cầu, đặt câu hỏi đàm thoại 2 chiều và sinh danh sách Task kèm Story Points & Role.",
+        "sprint": "Sprint 3",
+        "title": "Xây dựng Giao diện Nhập Điểm Phản Bịên & Chấm Điểm Hội Đồng",
+        "description": "Màn hình phiếu chấm điểm điện tử cho các thành viên Hội đồng Phản biện Khoa CNTT IUH.",
         "priority": "HIGH",
-        "estimatedDays": 4,
-        "storyPoints": 8,
-        "reasoning": "AI đóng vai trò Board Meeting Co-Pilot, đòi hỏi Prompt Engineering khắt khe và validate JSON Strict Output.",
-        "recommendedRole": "AI Solutions Architect",
-        "contingencyPlan": "Xây dựng JSON Repair Sanitizer xử lý các trường hợp LLM trả về markdown dư thừa."
-      },
-      {
-        "sprint": "Sprint 5",
-        "title": "Kiểm thử Tải WebSocket Realtime & Đóng gói Báo cáo KLTN",
-        "description": "Kiểm thử đồng thời 100+ kết nối WebSocket và hoàn thiện tài liệu báo cáo khoa học.",
-        "priority": "HIGH",
-        "estimatedDays": 4,
-        "storyPoints": 5,
-        "reasoning": "Đảm bảo tính sẵn sàng cao (High Availability) khi bảo vệ trước Hội đồng Phản biện.",
-        "recommendedRole": "QA Lead / Project Manager",
-        "contingencyPlan": "Chuẩn bị môi trường Standalone Backup khi trình diễn trước Hội đồng."
+        "estimatedDays": 3,
+        "bufferDays": 0,
+        "assignedRole": "Frontend Developer"
       }
     ]
   },
   {
     "id": "sample-02",
-    "domain": "E-Commerce Microservices",
-    "title": "Hệ thống Sàn Thương Mại Điện Tử Enterprise Microservices",
-    "requirementText": "Phát triển sàn thương mại điện tử quy mô lớn hỗ trợ quản lý sản phẩm, giỏ hàng, thanh toán qua VNPAY/Momo, theo dõi đơn hàng và tìm kiếm ElasticSearch.",
-    "summary": "Phân rã dự án E-Commerce Enterprise dựa trên Microsoft eShopOnContainers Benchmark Spec (PMBOK Agile Guideline).",
-    "sourceReference": "Microsoft eShopOnContainers Architecture Reference Guide & PMBOK 7th Edition WBS Standards",
-    "sourceUrl": "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/",
+    "domain": "University Credit Enrollment",
+    "title": "Hệ thống Đăng ký Học phần & Đào tạo Theo Tín chỉ (IUH Credit System)",
+    "requirementText": "Phát triển hệ thống đăng ký học phần tín chỉ cho Đại học Công nghiệp TP.HCM chịu tải cao vào đợt đăng ký, xử lý trùng lịch học, điều kiện tiên quyết và tính tổng học phí.",
+    "summary": "Phân rã bài toán Đăng ký học phần tín chỉ theo tiêu chuẩn xử lý Concurrency và Caching.",
+    "sourceReference": "Cổng Thông tin Đào tạo Tín chỉ IUH & Enterprise Architecture Blueprints",
+    "sourceUrl": "https://dkmh.iuh.edu.vn/",
     "tasks": [
       {
         "sprint": "Sprint 1",
-        "title": "Thiết kế Schema Database Catalog Service & ElasticSearch Indexing",
-        "description": "Xây dựng bảng products, categories, attributes và đồng bộ dữ liệu sang ElasticSearch.",
+        "title": "Thiết kế Schema Học phần, Lớp học phần, Thời khóa biểu & Điều kiện tiên quyết",
+        "description": "Xây dựng bảng courses, class_sections, schedules, course_prerequisites.",
         "priority": "URGENT",
         "estimatedDays": 3,
-        "storyPoints": 5,
-        "reasoning": "Tìm kiếm sản phẩm siêu tốc đòi hỏi Indexing cấu hình chuẩn xác trên ElasticSearch.",
-        "recommendedRole": "Database Administrator / Senior BE",
-        "contingencyPlan": "Tạo Logstash pipeline tự động sync dữ liệu từ PostgreSQL sang ElasticSearch."
+        "bufferDays": 1,
+        "assignedRole": "Database Architect",
+        "riskWarning": "Kiểm tra kỹ ràng buộc môn học trước/môn song hành để tránh lỗi logic đăng ký."
       },
       {
         "sprint": "Sprint 2",
-        "title": "Phát triển Cart-Service với Redis Distributed Caching",
-        "description": "Lưu trữ thông tin giỏ hàng tạm thời trên Redis cluster cho người mua.",
-        "priority": "HIGH",
-        "estimatedDays": 3,
-        "storyPoints": 3,
-        "reasoning": "Tốc độ đọc/ghi giỏ hàng cần < 10ms để không ảnh hưởng đến chuyển đổi mua hàng.",
-        "recommendedRole": "Backend Developer",
-        "contingencyPlan": "Cấu hình Redis TTL (Time-To-Live) 7 ngày tự dọn dẹp giỏ hàng ảo."
+        "title": "Phát triển Engine Xử lý Đăng ký Lớp Học Phần với Redis Distributed Lock",
+        "description": "Xử lý hàng nghìn sinh viên cùng tranh chấp suất học phần tại cùng một thời điểm.",
+        "priority": "URGENT",
+        "estimatedDays": 4,
+        "bufferDays": 2,
+        "assignedRole": "Senior Backend Developer",
+        "riskWarning": "Bắt buộc dùng Lock phân tán Redis Redlock để tránh tình trạng sỉ số vượt quá giới hạn lớp."
       },
       {
         "sprint": "Sprint 3",
-        "title": "Tích hợp Cổng Thanh Toán VNPAY & MoMo IPN Callbacks",
-        "description": "Tạo URL thanh toán và xử lý IPN Callback xác nhận giao dịch an toàn (Checksum Validation).",
-        "priority": "URGENT",
-        "estimatedDays": 4,
-        "storyPoints": 8,
-        "reasoning": "Liên quan đến tiền bạc và bảo mật Webhook Hash Signature.",
-        "recommendedRole": "Security & Fintech Engineer",
-        "contingencyPlan": "Sử dụng Idempotent Key để ngăn chặn xử lý trùng lặp giao dịch khi VNPAY retry IPN."
-      },
-      {
-        "sprint": "Sprint 4",
-        "title": "Phát triển Dashboard Thống kê Doanh số & Báo cáo Tồn Kho",
-        "description": "Biểu đồ thống kê doanh thu theo ngày/tháng và cảnh báo sản phẩm sắp hết hàng.",
+        "title": "Xây dựng Giao diện Thời Khóa Biểu Tuần & Check Trùng Tiết Học",
+        "description": "Màn hình thời khóa biểu dạng lưới trực quan giúp sinh viên phát hiện ngay lập tức các tiết học bị trùng.",
         "priority": "HIGH",
         "estimatedDays": 3,
-        "storyPoints": 5,
-        "reasoning": "Truy vấn thống kê tổng hợp lớn cần được tối ưu bằng Materialized Views.",
-        "recommendedRole": "Frontend / Data Visualization Dev",
-        "contingencyPlan": "Cache kết quả báo cáo thống kê theo giờ trên Redis."
+        "bufferDays": 0,
+        "assignedRole": "Frontend Developer"
       }
     ]
   },
   {
     "id": "sample-03",
-    "domain": "Fintech & Mobile Banking",
-    "title": "Ứng Dụng Ngân Hàng Số & Ví Điện Tử Mobile Banking",
-    "requirementText": "Xây dựng ứng dụng ngân hàng số bảo mật cao hỗ trợ xác thực sinh trắc học (FaceID/Vân tay), chuyển tiền 24/7 qua Napas, thanh toán QR Code và tra cứu lịch sử giao dịch.",
-    "summary": "Phân rã ứng dụng Fintech theo tiêu chuẩn ISO/IEC 27001 & PCI-DSS Compliance Guidelines.",
-    "sourceReference": "ISO/IEC 27001 Information Security & PCI-DSS Financial System WBS Benchmark",
-    "sourceUrl": "https://www.pcisecuritystandards.org/",
+    "domain": "E-Commerce & Digital Payments VN",
+    "title": "Nền tảng Sàn Thương mại Điện tử Việt Nam Tích hợp Ví MoMo & VNPay",
+    "requirementText": "Phát triển sàn thương mại điện tử hỗ trợ bán hàng đa kênh, tích hợp giỏ hàng Redis, thanh toán VNPAY/MoMo, đơn vị vận chuyển Giao Hàng Nhanh (GHN) và tra cứu đơn hàng.",
+    "summary": "Phân rã dự án E-Commerce Việt Nam theo chuẩn Microsoft eShopOnContainers & VNPAY Payment Specs.",
+    "sourceReference": "Microsoft eShopOnContainers Microservices Specification & VNPAY Payment Gateway Guide",
+    "sourceUrl": "https://sandbox.vnpayment.vn/vnpayv2/",
     "tasks": [
       {
         "sprint": "Sprint 1",
-        "title": "Xây dựng Module HSM Hardware Security & Encryption Key Rotation",
-        "description": "Mã hóa dữ liệu tài khoản và số thẻ theo chuẩn AES-256 GCM.",
-        "priority": "URGENT",
-        "estimatedDays": 5,
-        "storyPoints": 13,
-        "reasoning": "Yêu cầu an ninh tài chính tối cao theo chuẩn PCI-DSS Level 1.",
-        "recommendedRole": "Security Specialist / Lead Backend",
-        "contingencyPlan": "Dùng HashiCorp Vault để quản lý mã hóa khóa bí mật tập trung."
+        "title": "Thiết kế Schema Database Sản phẩm, Giỏ hàng & Đơn hàng",
+        "description": "Xây dựng bảng products, categories, cart_items, orders, order_items.",
+        "priority": "HIGH",
+        "estimatedDays": 3,
+        "bufferDays": 0,
+        "assignedRole": "Backend Developer"
       },
       {
         "sprint": "Sprint 2",
-        "title": "Triển khai Chuyển Tiền Realtime 24/7 qua cổng Napas API",
-        "description": "Xử lý transaction 2 pha (2-Phase Commit) nạp/rút tiền liên ngân hàng.",
+        "title": "Tích hợp Cổng Thanh toán VNPay IPN Callback Sandbox",
+        "description": "Tạo URL chuyển hướng thanh toán VNPAY và xử lý IPN Callback xác nhận giao dịch an toàn (Checksum Hash).",
         "priority": "URGENT",
         "estimatedDays": 4,
-        "storyPoints": 8,
-        "reasoning": "Tránh rủi ro treo tiền khi mạng Napas chập chờn.",
-        "recommendedRole": "Fintech Integration Specialist",
-        "contingencyPlan": "Xây dựng hệ thống Reconcile (Đối soát) tự động chạy hàng đêm."
+        "bufferDays": 1,
+        "assignedRole": "Security & Fintech Specialist",
+        "riskWarning": "Dùng Idempotent Key để ngăn chặn xử lý nạp tiền/trừ tiền trùng lặp khi VNPAY gọi IPN Retry."
+      },
+      {
+        "sprint": "Sprint 3",
+        "title": "Tích hợp API Đơn vị Vận chuyển Giao Hàng Nhanh (GHN)",
+        "description": "Tự động tính phí ship theo địa chỉ quận/huyện và đẩy đơn hàng sang GHN lấy mã vận đơn.",
+        "priority": "HIGH",
+        "estimatedDays": 3,
+        "bufferDays": 0,
+        "assignedRole": "Backend Developer"
+      }
+    ]
+  },
+  {
+    "id": "sample-04",
+    "domain": "Atlassian Agile Project Management",
+    "title": "Enterprise Agile Project Management System (Jira & Scrum Blueprint)",
+    "requirementText": "Build an enterprise Agile project management platform supporting Scrum/Kanban boards, backlog grooming, sprint management, WebSocket real-time updates, and AI requirement decomposition.",
+    "summary": "International Agile Project Management WBS blueprint based on Atlassian Jira Architecture Reference.",
+    "sourceReference": "Atlassian Jira Software Architecture WBS Blueprint & IEEE Std 12207 Guidelines",
+    "sourceUrl": "https://www.atlassian.com/agile/project-management/work-breakdown-structure",
+    "tasks": [
+      {
+        "sprint": "Sprint 1",
+        "title": "PostgreSQL Multi-tenant Database Schema & JWT Security Gateway",
+        "description": "Design DDL for users, workspaces, spaces, sprints, tasks, and configure Spring Cloud Gateway security filter.",
+        "priority": "URGENT",
+        "estimatedDays": 3,
+        "bufferDays": 1,
+        "assignedRole": "System Architect",
+        "riskWarning": "Ensure workspace and space isolation for multi-tenant security compliance."
+      },
+      {
+        "sprint": "Sprint 2",
+        "title": "Kanban Board & WebSocket Real-time STOMP Handler",
+        "description": "Develop 3-column Kanban board with drag and drop dnd-kit and real-time WebSocket state synchronizer.",
+        "priority": "URGENT",
+        "estimatedDays": 4,
+        "bufferDays": 1,
+        "assignedRole": "Fullstack Developer",
+        "riskWarning": "Implement optimistic UI updates to prevent UI stutter during network latency."
+      }
+    ]
+  },
+  {
+    "id": "sample-05",
+    "domain": "Healthtech, Telehealth & EHR Systems",
+    "title": "Hệ thống Y tế Số, Tư vấn Khám Bệnh Từ Xa (Telehealth WebRTC) & Hồ sơ Bệnh án Điện tử (EHR)",
+    "requirementText": "Phát triển ứng dụng Y tế số hỗ trợ bệnh nhân đặt lịch hẹn khám, tư vấn khám bệnh từ xa Video Call WebRTC, Hồ sơ Bệnh án Điện tử mã hóa AES-256, đơn thuốc điện tử và thông báo nhắc lịch uống thuốc Zalo ZNS/Email.",
+    "summary": "Phân rã hệ thống Y tế Số, Khám từ xa Telehealth WebRTC và Bệnh án Điện tử EHR mã hóa AES-256.",
+    "sourceReference": "Bộ Y tế Việt Nam - Thông tư 46/2018/TT-BYT về Hồ sơ Bệnh án Điện tử & IEEE Std 12207",
+    "sourceUrl": "https://moh.gov.vn/",
+    "tasks": [
+      {
+        "sprint": "Sprint 1",
+        "title": "Thiết kế Schema Database Bác sĩ, Bệnh nhân, Khung giờ Khám & Bệnh án Điện tử (EHR)",
+        "description": "Xây dựng bảng doctors, patients, appointment_slots, medical_records, prescriptions.",
+        "priority": "URGENT",
+        "estimatedDays": 3,
+        "bufferDays": 1,
+        "assignedRole": "Database Architect",
+        "riskWarning": "Trường dữ liệu bệnh án cá nhân (chẩn đoán, tiền sử bệnh) phải mã hóa AES-256 trước khi ghi DB."
+      },
+      {
+        "sprint": "Sprint 1",
+        "title": "Phát triển Module Đặt Lịch Khám & Tích hợp Thanh toán Tiền Khám VNPAY Sandbox",
+        "description": "Bệnh nhân chọn bác sĩ theo chuyên khoa (Nội, Nhi, Tim mạch), chọn khung giờ trống và thanh toán đặt chỗ VNPAY.",
+        "priority": "URGENT",
+        "estimatedDays": 4,
+        "bufferDays": 1,
+        "assignedRole": "Backend Developer",
+        "riskWarning": "Dùng Redis Distributed Lock cho slot giờ khám để tránh 2 bệnh nhân đặt cùng 1 ca khám của bác sĩ."
+      },
+      {
+        "sprint": "Sprint 2",
+        "title": "Phát triển Module Tư Vấn Khám Từ Xa Telehealth qua Video Call WebRTC / Signaling Server",
+        "description": "Xây dựng phòng gọi Video trực tiếp 1-1 giữa Bác sĩ và Bệnh nhân trên WebRTC kết hợp Chat gửi ảnh xét nghiệm.",
+        "priority": "HIGH",
+        "estimatedDays": 4,
+        "bufferDays": 1,
+        "assignedRole": "Fullstack Developer",
+        "riskWarning": "Cần máy chủ TURN/STUN server dự phòng khi mạng bệnh nhân bị NAT / Firewall chặn kết nối P2P."
+      },
+      {
+        "sprint": "Sprint 2",
+        "title": "Module Kê Đơn Thuốc Điện Tử & Mã Hóa Bảo Mật AES-256 Hồ Sơ Bệnh Án",
+        "description": "Bác sĩ tạo đơn thuốc điện tử trong buổi khám, mã hóa nội dung chẩn đoán và lưu trữ hồ sơ EHR an toàn.",
+        "priority": "HIGH",
+        "estimatedDays": 3,
+        "bufferDays": 0,
+        "assignedRole": "Security & Backend Developer"
+      },
+      {
+        "sprint": "Sprint 3",
+        "title": "Tích hợp Service Nhắc Lịch Uống Thuốc Hàng Ngày qua Zalo ZNS & Email",
+        "description": "Cron Job tự động quét đơn thuốc đang điều trị và gửi tin nhắn Zalo ZNS / Email nhắc bệnh nhân uống thuốc đúng giờ.",
+        "priority": "MEDIUM",
+        "estimatedDays": 2,
+        "bufferDays": 0,
+        "assignedRole": "Backend Developer"
       }
     ]
   }
