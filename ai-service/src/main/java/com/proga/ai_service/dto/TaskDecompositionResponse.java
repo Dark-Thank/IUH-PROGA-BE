@@ -11,6 +11,7 @@ import java.util.List;
 @Builder
 public class TaskDecompositionResponse {
     private long threadId;
+    private String suggestedSpaceName;
     private String summary;
     private String sourceReference;
     private String sourceUrl;

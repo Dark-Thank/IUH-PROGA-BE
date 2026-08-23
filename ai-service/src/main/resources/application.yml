@@ -9,10 +9,13 @@ spring:
       - org.springframework.ai.autoconfigure.vectorstore.azure.AzureVectorStoreAutoConfiguration
   ai:
     openai:
-      api-key: ${GEMINI_API_KEY:${OPENAI_API_KEY:demo_key_proga_ai}}
+      base-url: https://generativelanguage.googleapis.com/v1beta/openai/
+      api-key: ${GEMINI_API_KEY}
+      headers:
+        x-goog-api-key: ${GEMINI_API_KEY}
       chat:
         options:
-          model: gpt-4o-mini
+          model: gemini-3.6-flash
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/proga_ai_db}
     username: ${DB_USERNAME:postgres}

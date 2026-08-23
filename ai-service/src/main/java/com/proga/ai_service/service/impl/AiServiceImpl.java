@@ -224,48 +224,47 @@ public class AiServiceImpl implements AiService {
             // Turn 1: Clarification & Interview Phase (DO NOT GENERATE TASKS YET!)
             systemPrompt = String.format("""
                 Bạn là một Requirement Agent (Product Owner / Business Analyst Co-Pilot) chuyên nghiệp cho hệ thống PROGA.
-                ĐÂY LÀ LƯỢT ĐÀM THOẠI ĐẦU TIÊN để làm rõ phạm vi bài toán với người dùng.
+                ĐÂY LÀ LƯỢT ĐÀM THOẠI ĐẦU TIÊN để làm rõ bài toán.
                 Nhiệm vụ của bạn:
-                1. Đọc kỹ mô tả bài toán CỦA NGƯỜI DÙNG và phân tích các góc độ nghiệp vụ/kỹ thuật.
-                2. Đưa ra 3-4 CÂU HỎI PHỎNG VẤN ĐÀM THOẠI ĐƯỢC THIẾT KẾ DÀNH RIÊNG CHO CHÍNH BÀI TOÁN ĐÓ trong trường 'summary' (Ví dụ: Nếu bài toán là Quản lý Nhà hàng thì hỏi về gọi món QR Code/Màn hình bếp/POS; Nếu là Y tế thì hỏi về WebRTC Video call/Mã hóa bệnh án AES-256; Nếu là Đồ án IUH thì hỏi về quy trình duyệt đề tài; Hỏi thêm về phân công nhân sự Nam/Linh/Tuấn nếu chưa rõ).
-                3. BẮT BUỘC TRẢ VỀ MẢNG 'tasks': [] RỖNG NGUYÊN BẢN (KHÔNG TẠO BẤT KỲ TASK NÀO Ở LƯỢT NÀY!).
+                1. Đọc mô tả bài toán và đưa ra LỜI CHÀO NGẮN GỌN + 1-2 CÂU HỎI NGHIỆP VỤ TỔNG QUAN ĐƠN GIẢN (KHÔNG hỏi sâu kỹ thuật phức tạp, KHÔNG hỏi về thành viên).
+                2. Gợi ý 1 Tên dự án ngắn gọn rõ ràng trong 'suggestedSpaceName' (ví dụ: 'Hệ thống Quản lý Nhà hàng QR', 'Ứng dụng Y tế Telehealth').
+                3. BẮT BUỘC TRẢ VỀ MẢNG 'tasks': [] RỖNG NGUYÊN BẢN (KHÔNG TẠO TASK Ở LƯỢT ĐẦU!).
                 
-                YÊU CẦU ĐỊNH DẠNG ĐẦU RA STRICT JSON:
+                YÊU CẦU ĐỊNH DẠNG STRICT JSON:
                 {
-                  "summary": "Lời chào và 3-4 câu hỏi phỏng vấn nghiệp vụ được thiết kế DÀNH RIÊNG cho bài toán của người dùng",
+                  "suggestedSpaceName": "Tên dự án ngắn gọn gợi ý",
+                  "summary": "Lời chào và 1-2 câu hỏi đàm thoại nghiệp vụ đơn giản",
                   "sourceReference": "%s",
                   "sourceUrl": "%s",
                   "tasks": []
                 }
                 """, ragSourceRef, ragSourceUrl);
         } else {
-            // Turn 2+: Task Breakdown Phase (User has provided context / answered questions)
+            // Turn 2+: Task Breakdown Phase
             systemPrompt = String.format("""
                 Bạn là một Requirement Agent (Product Owner / Business Analyst) chuyên nghiệp cho hệ thống PROGA.
-                CẢNH BÁO TỐI CAO: BẠN BẮT BUỘC BÓC TÁCH TASK DỰA TRÊN CHÍNH NGÀNH NGHỀ BÀI TOÁN CỦA NGƯỜI DÙNG.
-                NẾU YÊU CẦU LÀ Y TẾ / TELEHEALTH / BÁC SĨ / BỆNH NHÂN / BỆNH ÁN ĐIỆN TỬ, BẠN BẮT BUỘC PHẢI TẠO CÁC TASK VỀ Y TẾ VÀ TELEHEALTH (Ví dụ: WebRTC Video Call, Đặt lịch khám bác sĩ, Đơn thuốc điện tử mã hóa AES-256). TUYỆT ĐỐI KHÔNG ĐƯỢC TẠO CÁC TASK VỀ BÁN HÀNG / E-COMMERCE!
+                BẠN BẮT BUỘC BÓC TÁCH TASK DỰA TRÊN CHÍNH NGÀNH NGHỀ BÀI TOÁN CỦA NGƯỜI DÙNG.
+                Bây giờ hãy bóc tách danh sách từ 8 - 15 Task cụ thể phân theo Sprint 1 tuần (Sprint 1, Sprint 2, Sprint 3).
+                Gán vai trò chuyên môn (assignedRole: Backend Developer, Frontend Developer, QA Lead, DevOps, System Architect) cho từng task.
                 
-                Người dùng đã đàm thoại và bổ sung chi tiết yêu cầu. Bây giờ hãy bóc tách danh sách từ 10 - 25 Task cụ thể theo Sprint 1 tuần (5-7 ngày làm việc).
-                NẾU TRONG NỘI DUNG NÊU TÊN THÀNH VIÊN VÀ VAI TRÒ (ví dụ: 'Nam làm Backend, Linh làm Frontend, Tuấn làm QA'), BẠN BẮT BUỘC ĐIỀN TÊN THÀNH VIÊN ĐÓ VÀO TRƯỜNG suggestedMemberName.
-                
-                ĐÂY LÀ MẪU DỮ LIỆU TRI THỨC RAG TƯƠNG ĐỒNG CHỈ DÙNG THAM KHẢO CẤU TRÚC JSON (%s):
+                ĐÂY LÀ MẪU RAG THAM KHẢO CẤU TRÚC (%s):
                 %s
                 
-                YÊU CẦU ĐỊNH DẠNG ĐẦU RA STRICT JSON:
+                YÊU CẦU ĐỊNH DẠNG STRICT JSON:
                 {
+                  "suggestedSpaceName": "Tên dự án gợi ý",
                   "summary": "Tóm tắt ngắn gọn việc bóc tách danh sách WBS Tasks dựa trên đàm thoại",
                   "sourceReference": "%s",
                   "sourceUrl": "%s",
                   "tasks": [
                     {
-                      "sprint": "Sprint 1: Tên Sprint",
+                      "sprint": "Sprint 1",
                       "title": "Tên task ngắn gọn rõ ràng",
                       "description": "Mô tả công việc chi tiết",
                       "priority": "HIGH / MEDIUM / LOW / URGENT",
                       "estimatedDays": 3,
                       "bufferDays": 1,
-                      "assignedRole": "Backend Developer / Frontend Developer / DevOps / QA Lead / Tech Lead / BA",
-                      "suggestedMemberName": "Tên thành viên nếu người dùng nêu tên (ví dụ: Nam / Linh)",
+                      "assignedRole": "Backend Developer / Frontend Developer / QA Lead / DevOps / System Architect",
                       "riskWarning": "Cảnh báo rủi ro ngắn gọn (Chỉ điền nếu priority là URGENT hoặc HIGH, để null nếu bình thường)"
                     }
                   ]
@@ -289,15 +288,16 @@ public class AiServiceImpl implements AiService {
             String respSourceUrl = (String) parsed.getOrDefault("sourceUrl", ragSourceUrl);
             List<TaskDecompositionResponse.DecomposedTaskItem> taskItems;
 
+            String suggestedSpaceName = (String) parsed.get("suggestedSpaceName");
+
             if (isFirstTurn) {
-                // TURN 1 GUARANTEE: Strictly return empty tasks array, forcing AI to ask clarifying questions first!
+                // TURN 1 GUARANTEE: Strictly return empty tasks array!
                 taskItems = Collections.emptyList();
                 if (summary == null || summary.isBlank() || summary.contains("Đã phân rã")) {
-                    summary = "Chào bạn! Tôi là Requirement Agent (PO/BA). Để hỗ trợ bóc tách danh sách WBS Tasks chính xác nhất cho dự án của bạn, tôi cần làm rõ 3 thông tin sau:\n" +
-                              "1. Đội ngũ phát triển của bạn gồm bao nhiêu người và phân vai ra sao (ví dụ: Ai làm Backend, Frontend, QA)?\n" +
-                              "2. Dự án có tiêu chuẩn bảo mật/thanh toán hoặc tích hợp bên thứ ba nào đặc thù không (ví dụ: VNPay, MoMo, OAuth2)?\n" +
-                              "3. Thời gian triển khai dự kiến hoặc số lượng Sprint bạn kỳ vọng là bao nhiêu?\n\n" +
-                              "👉 Bạn vui lòng nhắn tin phản hồi lại các thông tin trên trong khung chat bên dưới để tôi bắt đầu bóc tách danh sách Tasks nhé!";
+                    summary = "Chào bạn! Tôi là Requirement Agent (PO/BA). Để hỗ trợ bóc tách danh sách WBS Tasks chính xác nhất cho dự án của bạn, tôi cần trao đổi 1-2 điểm nghiệp vụ tổng quan sau:\n" +
+                              "1. Quy trình nghiệp vụ cốt lõi mà bạn muốn ưu tiên số 1 trong dự án là gì?\n" +
+                              "2. Dự án dự kiến triển khai trong khoảng bao nhiêu Sprint (mỗi Sprint 1 tuần)?\n\n" +
+                              "👉 Bạn phản hồi lại các thông tin trên (hoặc gõ 'Chốt task ngay') để tôi bắt đầu khởi tạo Bảng Task nhé!";
                 }
             } else {
                 List<Map<String, Object>> tasksRaw = (List<Map<String, Object>>) parsed.getOrDefault("tasks", Collections.emptyList());
@@ -318,6 +318,7 @@ public class AiServiceImpl implements AiService {
 
             responseObj = TaskDecompositionResponse.builder()
                     .threadId(thread.getId())
+                    .suggestedSpaceName(suggestedSpaceName)
                     .summary(summary)
                     .sourceReference(respSourceRef)
                     .sourceUrl(respSourceUrl)

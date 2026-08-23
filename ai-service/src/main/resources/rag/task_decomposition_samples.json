@@ -234,5 +234,92 @@
         "assignedRole": "Backend Developer"
       }
     ]
+  },
+  {
+    "id": "sample-06",
+    "domain": "EdTech, E-Learning & LMS Systems",
+    "title": "Hệ thống Giáo dục Trực tuyến EdTech, Phát Video Khóa học (HLS Streaming) & Thi Trắc nghiệm",
+    "requirementText": "Phát triển nền tảng học trực tuyến LMS cho phép giảng viên đăng khóa học, phát video bài giảng HLS phân đoạn, sinh viên làm bài thi trắc nghiệm tính giờ và cấp chứng chỉ hoàn thành.",
+    "summary": "Phân rã hệ thống EdTech E-Learning theo chuẩn HLS Video Streaming và Thi trắc nghiệm tự động.",
+    "sourceReference": "Apple HLS Protocol RFC 8216 & Open edX Architecture Blueprints",
+    "sourceUrl": "https://datatracker.ietf.org/doc/html/rfc8216",
+    "tasks": [
+      {
+        "sprint": "Sprint 1",
+        "title": "Thiết kế Schema Database Khóa học, Bài giảng, Video & Bài thi Trắc nghiệm",
+        "description": "Xây dựng bảng courses, modules, lessons, video_streams, quizzes, questions, student_certificates.",
+        "priority": "URGENT",
+        "estimatedDays": 3,
+        "bufferDays": 1,
+        "assignedRole": "Database Architect"
+      },
+      {
+        "sprint": "Sprint 1",
+        "title": "Xây dựng Pipeline Convert Video Upload sang Chuẩn HLS Streaming (m3u8 / ts segments)",
+        "description": "Sử dụng FFmpeg xử lý video học liệu đầu vào thành nhiều độ phân giải (1080p, 720p, 480p) chuẩn HLS.",
+        "priority": "URGENT",
+        "estimatedDays": 4,
+        "bufferDays": 1,
+        "assignedRole": "DevOps & Backend Developer",
+        "riskWarning": "Cần sử dụng Queue (RabbitMQ/Kafka) để mã hóa video asynchronously tránh nghẽn server."
+      },
+      {
+        "sprint": "Sprint 2",
+        "title": "Phát triển Giao diện Video Player HLS Bảo Mật Chống Tải Chùa (Video DRM Token)",
+        "description": "Trình chiếu video khóa học với HLS.js, xác thực Token mã hóa từng đoạn video ts.",
+        "priority": "HIGH",
+        "estimatedDays": 3,
+        "bufferDays": 0,
+        "assignedRole": "Frontend Developer"
+      },
+      {
+        "sprint": "Sprint 2",
+        "title": "Module Thi Trắc Nghiệm Trực Tuyến Tự Động Chấm Điểm & Đếm Giược Thời Gian",
+        "description": "Sinh viên làm bài thi trắc nghiệm theo thời gian đếm ngược, tự động nộp bài và tính điểm tức thì.",
+        "priority": "HIGH",
+        "estimatedDays": 3,
+        "bufferDays": 0,
+        "assignedRole": "Fullstack Developer"
+      }
+    ]
+  },
+  {
+    "id": "sample-07",
+    "domain": "Hotel, Travel Booking & Room Management",
+    "title": "Hệ thống Đặt Phòng Khách Sạn & Đặt Tour Du Lịch (OTA Booking)",
+    "requirementText": "Xây dựng ứng dụng đặt phòng khách sạn và tour du lịch trực tuyến, tìm kiếm theo loại phòng, giữ chỗ tự động 15 phút và thanh toán VNPAY.",
+    "summary": "Phân rã bài toán Đặt phòng khách sạn theo tiêu chuẩn OTA Booking và Giữ chỗ tự động.",
+    "sourceReference": "OpenTravel Alliance OTA Standards & Booking.com System Architecture",
+    "sourceUrl": "https://opentravel.org/",
+    "tasks": [
+      {
+        "sprint": "Sprint 1",
+        "title": "Thiết kế Schema Database Khách sạn, Loại phòng, Trạng thái Giữ chỗ & Đơn đặt",
+        "description": "Xây dựng bảng hotels, room_types, rooms, room_availabilities, bookings, payment_transactions.",
+        "priority": "URGENT",
+        "estimatedDays": 3,
+        "bufferDays": 1,
+        "assignedRole": "Database Architect"
+      },
+      {
+        "sprint": "Sprint 1",
+        "title": "Phát triển Engine Giữ Chỗ Tự Động 15 Phút Với Redis Key Expiration",
+        "description": "Khách hàng chọn phòng, hệ thống tự động khóa phòng 15 phút để chờ thanh toán.",
+        "priority": "URGENT",
+        "estimatedDays": 4,
+        "bufferDays": 1,
+        "assignedRole": "Backend Developer",
+        "riskWarning": "Xử lý sự kiện Redis Expired Key để giải phóng phòng tự động nếu quá 15 phút chưa thanh toán."
+      },
+      {
+        "sprint": "Sprint 2",
+        "title": "Tích hợp Thanh Toán VNPAY QR Code & Tự Động Xác Nhận Đặt Phòng (IPN)",
+        "description": "Khách hàng thanh toán tiền phòng qua VNPay, hệ thống tự động cập nhật trạng thái phòng đã đặt.",
+        "priority": "HIGH",
+        "estimatedDays": 3,
+        "bufferDays": 0,
+        "assignedRole": "Backend Developer"
+      }
+    ]
   }
 ]
