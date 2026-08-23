@@ -5,8 +5,9 @@
     "title": "Hệ thống Quản lý Đồ án & Khóa luận Tốt nghiệp Khoa CNTT - IUH (IUH FIT Capstone)",
     "requirementText": "Xây dựng hệ thống quản lý Khóa luận Tốt nghiệp cho Khoa Công nghệ Thông tin - Trường ĐH Công nghiệp TP.HCM (IUH) hỗ trợ phân công Giảng viên Hướng dẫn, sinh viên nộp báo cáo tiến độ, chấm điểm phản biện và tổng hợp kết quả hội đồng.",
     "summary": "Phân rã hệ thống Quản lý Khóa luận Tốt nghiệp IUH FIT thành các task chuẩn theo quy trình quản lý đồ án đại học (Khoa CNTT - IUH).",
-    "sourceReference": "Quy trình Đồ án & Khóa luận Tốt nghiệp - Khoa Công nghệ Thông tin IUH & IEEE Std 12207",
-    "sourceUrl": "https://fit.iuh.edu.vn/",
+    "sourceReference": "Tiêu chuẩn Vòng đời Phần mềm IEEE Std 12207-2017 & Open-source Capstone Blueprint",
+    "sourceUrl": "https://standards.ieee.org/ieee/12207/6446/",
+    "evidenceBenchmark": "Căn cứ Tiêu chuẩn Quốc tế IEEE Std 12207-2017 về Quy trình Vòng đời Phần mềm & Khung phân rã Đồ án Tốt nghiệp CNTT.",
     "tasks": [
       {
         "sprint": "Sprint 1",
@@ -54,51 +55,42 @@
         "bufferDays": 1,
         "assignedRole": "Fullstack Developer",
         "riskWarning": "Cần giới hạn dung lượng file nộp tối đa 50MB và quét mã độc trước khi lưu trữ Cloud storage."
-      },
-      {
-        "sprint": "Sprint 3",
-        "title": "Xây dựng Giao diện Nhập Điểm Phản Bịên & Chấm Điểm Hội Đồng",
-        "description": "Màn hình phiếu chấm điểm điện tử cho các thành viên Hội đồng Phản biện Khoa CNTT IUH.",
-        "priority": "HIGH",
-        "estimatedDays": 3,
-        "bufferDays": 0,
-        "assignedRole": "Frontend Developer"
       }
     ]
   },
   {
     "id": "sample-02",
-    "domain": "University Credit Enrollment",
-    "title": "Hệ thống Đăng ký Học phần & Đào tạo Theo Tín chỉ (IUH Credit System)",
-    "requirementText": "Phát triển hệ thống đăng ký học phần tín chỉ cho Đại học Công nghiệp TP.HCM chịu tải cao vào đợt đăng ký, xử lý trùng lịch học, điều kiện tiên quyết và tính tổng học phí.",
-    "summary": "Phân rã bài toán Đăng ký học phần tín chỉ theo tiêu chuẩn xử lý Concurrency và Caching.",
-    "sourceReference": "Cổng Thông tin Đào tạo Tín chỉ IUH & Enterprise Architecture Blueprints",
-    "sourceUrl": "https://dkmh.iuh.edu.vn/",
+    "domain": "University Course Registration & Credit System",
+    "title": "Cổng Đăng ký Học phần Tín chỉ Trường Đại học Cao Tải (Course Registration)",
+    "requirementText": "Xây dựng cổng đăng ký học phần tín chỉ trực tuyến xử lý hàng nghìn sinh viên truy cập đồng thời, kiểm tra điều kiện tiên quyết, khóa nhóm lớp khi đủ sĩ số và thanh toán học phí.",
+    "summary": "Phân rã hệ thống Đăng ký Học phần Tín chỉ đại học xử lý cao tải và khóa nhóm lớp tự động.",
+    "sourceReference": "Redisson Distributed Lock Specification & High-Concurrency Concurrency Control Pattern",
+    "sourceUrl": "https://github.com/redisson/redisson/wiki/8.-distributed-locks-and-synchronizers",
+    "evidenceBenchmark": "Căn cứ Chuẩn khóa phân tán Redisson Distributed Lock để xử lý dứt điểm bài toán Race Condition khi 1,000 sinh viên cùng tranh chấp suất đăng ký lớp tín chỉ cuối cùng.",
     "tasks": [
       {
         "sprint": "Sprint 1",
-        "title": "Thiết kế Schema Học phần, Lớp học phần, Thời khóa biểu & Điều kiện tiên quyết",
-        "description": "Xây dựng bảng courses, class_sections, schedules, course_prerequisites.",
+        "title": "Thiết kế Schema Database Học phần, Lớp tín chỉ & Điều kiện Tiên quyết",
+        "description": "Tạo DDL các bảng courses, course_classes, prerequisites, class_enrollments, tuition_fees.",
         "priority": "URGENT",
         "estimatedDays": 3,
         "bufferDays": 1,
-        "assignedRole": "Database Architect",
-        "riskWarning": "Kiểm tra kỹ ràng buộc môn học trước/môn song hành để tránh lỗi logic đăng ký."
+        "assignedRole": "Database Architect"
+      },
+      {
+        "sprint": "Sprint 1",
+        "title": "Triển khai Redisson Distributed Lock Tránh Quá Sĩ Số Lớp Tín Chỉ",
+        "description": "Sử dụng Redisson Lock khóa sĩ số lớp thời gian thực khi sinh viên nhấn nút Đăng ký.",
+        "priority": "URGENT",
+        "estimatedDays": 4,
+        "bufferDays": 1,
+        "assignedRole": "Backend Developer",
+        "riskWarning": "Xử lý triệt để bài toán Race Condition theo tài liệu kỹ thuật Redisson Wiki 8."
       },
       {
         "sprint": "Sprint 2",
-        "title": "Phát triển Engine Xử lý Đăng ký Lớp Học Phần với Redis Distributed Lock",
-        "description": "Xử lý hàng nghìn sinh viên cùng tranh chấp suất học phần tại cùng một thời điểm.",
-        "priority": "URGENT",
-        "estimatedDays": 4,
-        "bufferDays": 2,
-        "assignedRole": "Senior Backend Developer",
-        "riskWarning": "Bắt buộc dùng Lock phân tán Redis Redlock để tránh tình trạng sỉ số vượt quá giới hạn lớp."
-      },
-      {
-        "sprint": "Sprint 3",
-        "title": "Xây dựng Giao diện Thời Khóa Biểu Tuần & Check Trùng Tiết Học",
-        "description": "Màn hình thời khóa biểu dạng lưới trực quan giúp sinh viên phát hiện ngay lập tức các tiết học bị trùng.",
+        "title": "Phát triển Giao diện Chọn Lớp & Kiểm tra Lịch trùng",
+        "description": "Màn hình thời khóa biểu trực quan cảnh báo khi sinh viên đăng ký trùng giờ học.",
         "priority": "HIGH",
         "estimatedDays": 3,
         "bufferDays": 0,
@@ -108,36 +100,37 @@
   },
   {
     "id": "sample-03",
-    "domain": "E-Commerce & Digital Payments VN",
-    "title": "Nền tảng Sàn Thương mại Điện tử Việt Nam Tích hợp Ví MoMo & VNPay",
-    "requirementText": "Phát triển sàn thương mại điện tử hỗ trợ bán hàng đa kênh, tích hợp giỏ hàng Redis, thanh toán VNPAY/MoMo, đơn vị vận chuyển Giao Hàng Nhanh (GHN) và tra cứu đơn hàng.",
-    "summary": "Phân rã dự án E-Commerce Việt Nam theo chuẩn Microsoft eShopOnContainers & VNPAY Payment Specs.",
-    "sourceReference": "Microsoft eShopOnContainers Microservices Specification & VNPAY Payment Gateway Guide",
-    "sourceUrl": "https://sandbox.vnpayment.vn/vnpayv2/",
+    "domain": "E-Commerce Multi-Vendor & POS Systems",
+    "title": "Sàn Thương Mại Điện Tử Đa Gian Hàng & POS Bán Hàng (E-Commerce Marketplace)",
+    "requirementText": "Phát triển ứng dụng bán hàng đa gian hàng tích hợp tìm kiếm sản phẩm ElasticSearch, giỏ hàng Redis, thanh toán VNPay IPN và quản lý tồn kho đa chi nhánh.",
+    "summary": "Phân rã sàn Thương mại Điện tử và hệ thống POS bán hàng chuẩn Microservices.",
+    "sourceReference": "Microsoft .NET Microservices Architecture & Stripe Idempotency Specification",
+    "sourceUrl": "https://stripe.com/docs/api/idempotent_requests",
+    "evidenceBenchmark": "Căn cứ Kiến trúc Microservices Microsoft & Tiêu chuẩn Idempotency Request Stripe để chống trùng lặp thanh toán IPN Callback.",
     "tasks": [
       {
         "sprint": "Sprint 1",
-        "title": "Thiết kế Schema Database Sản phẩm, Giỏ hàng & Đơn hàng",
-        "description": "Xây dựng bảng products, categories, cart_items, orders, order_items.",
-        "priority": "HIGH",
+        "title": "Thiết kế Schema Database Sản phẩm, Gian hàng, Đơn hàng & Kho hàng",
+        "description": "Tạo DDL các bảng merchants, products, categories, orders, order_items, inventories.",
+        "priority": "URGENT",
         "estimatedDays": 3,
-        "bufferDays": 0,
-        "assignedRole": "Backend Developer"
+        "bufferDays": 1,
+        "assignedRole": "Database Architect"
       },
       {
-        "sprint": "Sprint 2",
-        "title": "Tích hợp Cổng Thanh toán VNPay IPN Callback Sandbox",
-        "description": "Tạo URL chuyển hướng thanh toán VNPAY và xử lý IPN Callback xác nhận giao dịch an toàn (Checksum Hash).",
+        "sprint": "Sprint 1",
+        "title": "Tích hợp Cổng Thanh toán VNPay QR Code & Xử lý IPN Callback SHA256",
+        "description": "Kết nối API VNPay, xác thực mã băm SHA256 và cập nhật trạng thái đơn hàng.",
         "priority": "URGENT",
         "estimatedDays": 4,
         "bufferDays": 1,
-        "assignedRole": "Security & Fintech Specialist",
-        "riskWarning": "Dùng Idempotent Key để ngăn chặn xử lý nạp tiền/trừ tiền trùng lặp khi VNPAY gọi IPN Retry."
+        "assignedRole": "Backend Developer",
+        "riskWarning": "Sử dụng Idempotency Key theo Stripe Specification xử lý trùng lặp giao dịch khi IPN gọi lại nhiều lần."
       },
       {
-        "sprint": "Sprint 3",
-        "title": "Tích hợp API Đơn vị Vận chuyển Giao Hàng Nhanh (GHN)",
-        "description": "Tự động tính phí ship theo địa chỉ quận/huyện và đẩy đơn hàng sang GHN lấy mã vận đơn.",
+        "sprint": "Sprint 2",
+        "title": "Xây dựng Engine Tìm kiếm Sản phẩm Siêu Nhanh với ElasticSearch",
+        "description": "Index sản phẩm lên ElasticSearch hỗ trợ gõ từ khóa tiếng Việt có dấu/không dấu và lọc giá.",
         "priority": "HIGH",
         "estimatedDays": 3,
         "bufferDays": 0,
@@ -147,32 +140,32 @@
   },
   {
     "id": "sample-04",
-    "domain": "Atlassian Agile Project Management",
-    "title": "Enterprise Agile Project Management System (Jira & Scrum Blueprint)",
-    "requirementText": "Build an enterprise Agile project management platform supporting Scrum/Kanban boards, backlog grooming, sprint management, WebSocket real-time updates, and AI requirement decomposition.",
-    "summary": "International Agile Project Management WBS blueprint based on Atlassian Jira Architecture Reference.",
-    "sourceReference": "Atlassian Jira Software Architecture WBS Blueprint & IEEE Std 12207 Guidelines",
-    "sourceUrl": "https://www.atlassian.com/agile/project-management/work-breakdown-structure",
+    "domain": "Food Delivery & Ride-Hailing Apps",
+    "title": "Ứng dụng Đặt Xe Công Nghệ & Giao Đồ Ăn Real-time GPS",
+    "requirementText": "Xây dựng ứng dụng đặt xe và giao thức ăn thời gian thực: Định vị GPS tài xế, ghép nối thuật toán tìm tài xế gần nhất, tính cước phí động surge pricing và theo dõi lộ trình trên bản đồ.",
+    "summary": "Phân rã ứng dụng Đặt xe & Giao đồ ăn Real-time GPS chuẩn Microservices.",
+    "sourceReference": "IETF RFC 6455 The WebSocket Protocol & Redis GeoSpatial Command Specification",
+    "sourceUrl": "https://datatracker.ietf.org/doc/html/rfc6455",
+    "evidenceBenchmark": "Căn cứ Tiêu chuẩn WebSocket IETF RFC 6455 & Lệnh định vị địa lý Redis GeoSpatial GEOADD/GEORADIUS.",
     "tasks": [
       {
         "sprint": "Sprint 1",
-        "title": "PostgreSQL Multi-tenant Database Schema & JWT Security Gateway",
-        "description": "Design DDL for users, workspaces, spaces, sprints, tasks, and configure Spring Cloud Gateway security filter.",
+        "title": "Thiết kế Schema Database Khách hàng, Tài xế, Chuyến xe & Tọa độ GPS",
+        "description": "Tạo DDL các bảng riders, drivers, rides, ride_locations, payments, driver_wallets.",
         "priority": "URGENT",
         "estimatedDays": 3,
         "bufferDays": 1,
-        "assignedRole": "System Architect",
-        "riskWarning": "Ensure workspace and space isolation for multi-tenant security compliance."
+        "assignedRole": "Database Architect"
       },
       {
-        "sprint": "Sprint 2",
-        "title": "Kanban Board & WebSocket Real-time STOMP Handler",
-        "description": "Develop 3-column Kanban board with drag and drop dnd-kit and real-time WebSocket state synchronizer.",
+        "sprint": "Sprint 1",
+        "title": "Xây dựng Server WebSocket Nhận Tọa độ GPS Tài xế Thời gian thực",
+        "description": "Truyền nhận tọa độ GPS liên tục 3 giây/lần qua WebSocket và cập nhật vị trí lên Map.",
         "priority": "URGENT",
         "estimatedDays": 4,
         "bufferDays": 1,
-        "assignedRole": "Fullstack Developer",
-        "riskWarning": "Implement optimistic UI updates to prevent UI stutter during network latency."
+        "assignedRole": "Backend Developer",
+        "riskWarning": "Sử dụng lệnh GEOADD của Redis theo chuẩn Redis GeoSpatial để lưu vị trí tài xế thay vì ghi liên tục vào SQL."
       }
     ]
   },
@@ -182,8 +175,9 @@
     "title": "Hệ thống Y tế Số, Tư vấn Khám Bệnh Từ Xa (Telehealth WebRTC) & Hồ sơ Bệnh án Điện tử (EHR)",
     "requirementText": "Phát triển ứng dụng Y tế số hỗ trợ bệnh nhân đặt lịch hẹn khám, tư vấn khám bệnh từ xa Video Call WebRTC, Hồ sơ Bệnh án Điện tử mã hóa AES-256, đơn thuốc điện tử và thông báo nhắc lịch uống thuốc Zalo ZNS/Email.",
     "summary": "Phân rã hệ thống Y tế Số, Khám từ xa Telehealth WebRTC và Bệnh án Điện tử EHR mã hóa AES-256.",
-    "sourceReference": "Bộ Y tế Việt Nam - Thông tư 46/2018/TT-BYT về Hồ sơ Bệnh án Điện tử & IEEE Std 12207",
-    "sourceUrl": "https://moh.gov.vn/",
+    "sourceReference": "Thông tư 46/2018/TT-BYT Bộ Y tế & Tiêu chuẩn Mã hóa NIST SP 800-38A (AES Block Cipher)",
+    "sourceUrl": "https://thuvienphapluat.vn/van-ban/The-thao-Y-te/Thong-tu-46-2018-TT-BYT-quy-dinh-ho-so-benh-an-dien-tu-404092.aspx",
+    "evidenceBenchmark": "Căn cứ pháp lý Thư viện Pháp luật Thông tư 46/2018/TT-BYT & Tiêu chuẩn Mã hóa NIST SP 800-38A.",
     "tasks": [
       {
         "sprint": "Sprint 1",
@@ -193,45 +187,228 @@
         "estimatedDays": 3,
         "bufferDays": 1,
         "assignedRole": "Database Architect",
-        "riskWarning": "Trường dữ liệu bệnh án cá nhân (chẩn đoán, tiền sử bệnh) phải mã hóa AES-256 trước khi ghi DB."
+        "riskWarning": "Trường dữ liệu bệnh án cá nhân phải mã hóa AES-256 theo chuẩn NIST SP 800-38A trước khi ghi DB."
       },
       {
         "sprint": "Sprint 1",
         "title": "Phát triển Module Đặt Lịch Khám & Tích hợp Thanh toán Tiền Khám VNPAY Sandbox",
-        "description": "Bệnh nhân chọn bác sĩ theo chuyên khoa (Nội, Nhi, Tim mạch), chọn khung giờ trống và thanh toán đặt chỗ VNPAY.",
+        "description": "Bệnh nhân chọn bác sĩ theo chuyên khoa, chọn khung giờ trống và thanh toán VNPAY.",
+        "priority": "URGENT",
+        "estimatedDays": 4,
+        "bufferDays": 1,
+        "assignedRole": "Backend Developer"
+      },
+      {
+        "sprint": "Sprint 2",
+        "title": "Phát triển Module Tư Vấn Khám Từ Xa Telehealth qua Video Call WebRTC",
+        "description": "Xây dựng phòng gọi Video trực tiếp 1-1 giữa Bác sĩ và Bệnh nhân trên WebRTC chuẩn W3C.",
+        "priority": "HIGH",
+        "estimatedDays": 4,
+        "bufferDays": 1,
+        "assignedRole": "Fullstack Developer"
+      }
+    ]
+  },
+  {
+    "id": "sample-06",
+    "domain": "EdTech, E-Learning & LMS Systems",
+    "title": "Hệ thống Giáo dục Trực tuyến EdTech, Phát Video Khóa học (HLS Streaming) & Thi Trắc nghiệm",
+    "requirementText": "Phát triển nền tảng học trực tuyến LMS cho phép giảng viên đăng khóa học, phát video bài giảng HLS phân đoạn, sinh viên làm bài thi trắc nghiệm tính giờ và cấp chứng chỉ hoàn thành.",
+    "summary": "Phân rã hệ thống EdTech E-Learning theo chuẩn HLS Video Streaming và Thi trắc nghiệm tự động.",
+    "sourceReference": "Tiêu chuẩn Phát Video HLS Streaming Apple RFC 8216 & FFmpeg Formats Specification",
+    "sourceUrl": "https://datatracker.ietf.org/doc/html/rfc8216",
+    "evidenceBenchmark": "Căn cứ Tiêu chuẩn HTTP Live Streaming HLS RFC 8216 & FFmpeg Video Transcoding Pipeline.",
+    "tasks": [
+      {
+        "sprint": "Sprint 1",
+        "title": "Thiết kế Schema Database Khóa học, Bài giảng, Video & Bài thi Trắc nghiệm",
+        "description": "Xây dựng bảng courses, modules, lessons, video_streams, quizzes, questions, student_certificates.",
+        "priority": "URGENT",
+        "estimatedDays": 3,
+        "bufferDays": 1,
+        "assignedRole": "Database Architect"
+      },
+      {
+        "sprint": "Sprint 1",
+        "title": "Xây dựng Pipeline Convert Video Upload sang Chuẩn HLS Streaming (m3u8 / ts segments)",
+        "description": "Sử dụng FFmpeg xử lý video học liệu đầu vào thành nhiều độ phân giải chuẩn HLS RFC 8216.",
+        "priority": "URGENT",
+        "estimatedDays": 4,
+        "bufferDays": 1,
+        "assignedRole": "DevOps & Backend Developer",
+        "riskWarning": "Cần sử dụng Queue (RabbitMQ/Kafka) để mã hóa video asynchronously tránh treo CPU 100%."
+      }
+    ]
+  },
+  {
+    "id": "sample-07",
+    "domain": "Hotel, Travel Booking & Room Management",
+    "title": "Hệ thống Đặt Phòng Khách Sạn & Đặt Tour Du Lịch (OTA Booking)",
+    "requirementText": "Xây dựng ứng dụng đặt phòng khách sạn và tour du lịch trực tuyến, tìm kiếm theo loại phòng, giữ chỗ tự động 15 phút và thanh toán VNPAY.",
+    "summary": "Phân rã bài toán Đặt phòng khách sạn theo tiêu chuẩn OTA Booking và Giữ chỗ tự động.",
+    "sourceReference": "AWS DynamoDB / Redis Room Booking System Blueprint & OpenTravel Standards",
+    "sourceUrl": "https://aws.amazon.com/blogs/database/building-a-room-booking-system-with-amazon-dynamodb/",
+    "evidenceBenchmark": "Căn cứ AWS Database Architecture Blueprint về Xây dựng Hệ thống Đặt phòng và Giữ chỗ tạm thời bằng Redis Expiration.",
+    "tasks": [
+      {
+        "sprint": "Sprint 1",
+        "title": "Thiết kế Schema Database Khách sạn, Loại phòng, Trạng thái Giữ chỗ & Đơn đặt",
+        "description": "Xây dựng bảng hotels, room_types, rooms, room_availabilities, bookings, payment_transactions.",
+        "priority": "URGENT",
+        "estimatedDays": 3,
+        "bufferDays": 1,
+        "assignedRole": "Database Architect"
+      },
+      {
+        "sprint": "Sprint 1",
+        "title": "Phát triển Engine Giữ Chỗ Tự Động 15 Phút Với Redis Key Expiration",
+        "description": "Khách hàng chọn phòng, hệ thống tự động khóa phòng 15 phút để chờ thanh toán.",
         "priority": "URGENT",
         "estimatedDays": 4,
         "bufferDays": 1,
         "assignedRole": "Backend Developer",
-        "riskWarning": "Dùng Redis Distributed Lock cho slot giờ khám để tránh 2 bệnh nhân đặt cùng 1 ca khám của bác sĩ."
+        "riskWarning": "Xử lý sự kiện Redis Expired Key để giải phóng phòng tự động theo AWS Room Booking Blueprint."
+      }
+    ]
+  },
+  {
+    "id": "sample-08",
+    "domain": "Logistics & Warehouse Management Systems",
+    "title": "Hệ thống Quản lý Kho Hàng WMS & Điều phối Giao Hàng Tự động (Logistics WMS)",
+    "requirementText": "Phát triển ứng dụng Quản lý kho hàng WMS & Điều phối Giao hàng: Quản lý vị trí kệ kho theo mã Barcode/QR, tích hợp API Giao Hàng Nhanh (GHN) để tự động đẩy đơn vận chuyển và tính phí ship theo GPS.",
+    "summary": "Phân rã hệ thống Logistics WMS và Tích hợp đơn vị vận chuyển GHN API.",
+    "sourceReference": "Tài liệu API Giao Hàng Nhanh GHN v2 & Chuẩn Mã vạch GS1 Barcode Specification",
+    "sourceUrl": "https://api.ghn.vn/",
+    "evidenceBenchmark": "Căn cứ Cổng API chính thức Giao Hàng Nhanh GHN v2 & Tiêu chuẩn Mã vạch Quốc tế GS1.",
+    "tasks": [
+      {
+        "sprint": "Sprint 1",
+        "title": "Thiết kế Schema Database Kho hàng, Vị trí Kệ, Lô hàng & Đơn vận chuyển",
+        "description": "Tạo DDL các bảng warehouses, shelves, inventory_items, shipments, carrier_logs.",
+        "priority": "URGENT",
+        "estimatedDays": 3,
+        "bufferDays": 1,
+        "assignedRole": "Database Architect"
       },
       {
-        "sprint": "Sprint 2",
-        "title": "Phát triển Module Tư Vấn Khám Từ Xa Telehealth qua Video Call WebRTC / Signaling Server",
-        "description": "Xây dựng phòng gọi Video trực tiếp 1-1 giữa Bác sĩ và Bệnh nhân trên WebRTC kết hợp Chat gửi ảnh xét nghiệm.",
+        "sprint": "Sprint 1",
+        "title": "Tích hợp API Giao Hàng Nhanh (GHN) Tự động Tạo Đơn & In Mã Mã Vạch In Đơn",
+        "description": "Gửi thông tin đơn hàng tới GHN API, lấy mã vận đơn và tạo nhãn in Barcode cho kiện hàng.",
         "priority": "HIGH",
         "estimatedDays": 4,
         "bufferDays": 1,
-        "assignedRole": "Fullstack Developer",
-        "riskWarning": "Cần máy chủ TURN/STUN server dự phòng khi mạng bệnh nhân bị NAT / Firewall chặn kết nối P2P."
+        "assignedRole": "Backend Developer"
+      }
+    ]
+  },
+  {
+    "id": "sample-09",
+    "domain": "Enterprise HR & Biometric Attendance SaaS",
+    "title": "Hệ thống SaaS Quản lý Nhân sự & Chấm công Sinh trắc học FaceID (HRM SaaS)",
+    "requirementText": "Xây dựng hệ thống SaaS Quản lý Nhân sự & Chấm công Doanh nghiệp: Đăng nhập bảo mật JWT RBAC, chấm công qua nhận diện khuôn mặt AI, tự động tính lương theo số ngày công thực tế và xuất báo cáo Excel.",
+    "summary": "Phân rã hệ thống SaaS Quản lý Nhân sự HRM và Chấm công FaceID AI.",
+    "sourceReference": "Chuẩn Bảo mật OWASP Top 10 & IETF RFC 6749 OAuth 2.0 Framework",
+    "sourceUrl": "https://owasp.org/www-project-top-ten/",
+    "evidenceBenchmark": "Căn cứ Tiêu chuẩn Bảo mật OWASP Top 10 & Khung xác thực OAuth 2.0 IETF RFC 6749.",
+    "tasks": [
+      {
+        "sprint": "Sprint 1",
+        "title": "Thiết kế Schema Database Nhân sự, Phòng ban, Ca làm việc & Chấm công",
+        "description": "Tạo DDL các bảng employees, departments, shifts, attendance_logs, payrolls.",
+        "priority": "URGENT",
+        "estimatedDays": 3,
+        "bufferDays": 1,
+        "assignedRole": "Database Architect"
       },
       {
         "sprint": "Sprint 2",
-        "title": "Module Kê Đơn Thuốc Điện Tử & Mã Hóa Bảo Mật AES-256 Hồ Sơ Bệnh Án",
-        "description": "Bác sĩ tạo đơn thuốc điện tử trong buổi khám, mã hóa nội dung chẩn đoán và lưu trữ hồ sơ EHR an toàn.",
+        "title": "Triển khai Module Chấm công FaceID AI & Tự động Tính Lương",
+        "description": "Nhận diện khuôn mặt thời gian thực, lưu vết nhật ký chấm công và tự động tính bảng lương.",
+        "priority": "HIGH",
+        "estimatedDays": 4,
+        "bufferDays": 1,
+        "assignedRole": "Fullstack Developer"
+      }
+    ]
+  },
+  {
+    "id": "sample-10",
+    "domain": "Enterprise AI Chatbot & RAG Knowledge Base",
+    "title": "Nền tảng Chatbot AI CSKH Doanh Nghiệp Tự động dựa trên Kho Tri Thức RAG",
+    "requirementText": "Phát triển nền tảng Chatbot AI tự động trả lời thắc mắc của khách hàng dựa trên kho tài liệu doanh nghiệp RAG, hỗ trợ nhúng SDK vào Website và chuyển giao tư vấn viên.",
+    "summary": "Phân rã nền tảng Chatbot AI CSKH RAG và Vector Database Indexing.",
+    "sourceReference": "LangChain Question Answering RAG Architecture & Spring AI VectorStore Specification",
+    "sourceUrl": "https://python.langchain.com/docs/use_cases/question_answering/",
+    "evidenceBenchmark": "Căn cứ Kiến trúc Retrieval-Augmented Generation (RAG) LangChain & Tiêu chuẩn Spring AI VectorStore.",
+    "tasks": [
+      {
+        "sprint": "Sprint 1",
+        "title": "Xây dựng Pipeline Chunking & Vector Embeddings Tài liệu Doanh nghiệp",
+        "description": "Phân đoạn file PDF/Docx thành chunks 500 tokens, tạo Vector Embeddings và lưu trữ vào Vector DB.",
+        "priority": "URGENT",
+        "estimatedDays": 4,
+        "bufferDays": 1,
+        "assignedRole": "AI & Backend Developer"
+      },
+      {
+        "sprint": "Sprint 2",
+        "title": "Phát triển Widget Chatbot Nhúng Website & Luồng Chuyển Giao Tư Vấn Viên",
+        "description": "Tạo JavaScript Widget nhúng vào Website khách hàng, tự động chuyển luồng tới Nhân viên CSKH khi AI không tự tin.",
         "priority": "HIGH",
         "estimatedDays": 3,
         "bufferDays": 0,
-        "assignedRole": "Security & Backend Developer"
+        "assignedRole": "Frontend Developer"
+      }
+    ]
+  },
+  {
+    "id": "sample-11",
+    "domain": "Vietnam Public IT Investment & Smart City",
+    "title": "Hệ thống Quản lý Đầu tư CNTT & Dịch vụ Công Trực tuyến Việt Nam (Nghị định 73/2019/NĐ-CP)",
+    "requirementText": "Xây dựng ứng dụng Cổng Dịch vụ công trực tuyến và Quản lý dự án đầu tư CNTT cơ quan nhà nước tuân thủ quy trình thẩm định WBS, bảo mật tài khoản định danh VNeID và tích hợp Trục kết nối chia sẻ dữ liệu quốc gia (VDXR).",
+    "summary": "Phân rã dự án CNTT Dịch vụ công theo Nghị định 73/2019/NĐ-CP của Chính phủ Việt Nam.",
+    "sourceReference": "Nghị định 73/2019/NĐ-CP Chính phủ Việt Nam về Quản lý đầu tư ứng dụng CNTT ngân sách nhà nước",
+    "sourceUrl": "https://thuvienphapluat.vn/van-ban/Cong-nghe-thong-tin/Nghi-dinh-73-2019-ND-CP-quan-ly-dau-tu-ung-dung-cong-nghe-thong-tin-su-dung-nguon-von-ngan-sach-423247.aspx",
+    "evidenceBenchmark": "Căn cứ pháp lý Thư viện Pháp luật Nghị định 73/2019/NĐ-CP về lập đề cương và phân rã khối lượng công việc CNTT.",
+    "tasks": [
+      {
+        "sprint": "Sprint 1",
+        "title": "Thiết kế Cấu trúc Database Hồ sơ Dự án & Quy trình Thẩm định WBS",
+        "description": "Tạo DDL các bảng projects, wbs_items, appraisal_boards, vneid_users, approval_steps.",
+        "priority": "URGENT",
+        "estimatedDays": 3,
+        "bufferDays": 1,
+        "assignedRole": "Database Architect"
       },
       {
-        "sprint": "Sprint 3",
-        "title": "Tích hợp Service Nhắc Lịch Uống Thuốc Hàng Ngày qua Zalo ZNS & Email",
-        "description": "Cron Job tự động quét đơn thuốc đang điều trị và gửi tin nhắn Zalo ZNS / Email nhắc bệnh nhân uống thuốc đúng giờ.",
-        "priority": "MEDIUM",
-        "estimatedDays": 2,
-        "bufferDays": 0,
+        "sprint": "Sprint 1",
+        "title": "Tích hợp Xác thực Định danh Điện tử VNeID / SSO Chính phủ",
+        "description": "Kết nối API xác thực định danh tài khoản VNeID công dân và cán bộ công chức.",
+        "priority": "URGENT",
+        "estimatedDays": 4,
+        "bufferDays": 1,
         "assignedRole": "Backend Developer"
+      }
+    ]
+  },
+  {
+    "id": "sample-13",
+    "domain": "Vietnam Higher Education Infrastructure",
+    "title": "Hệ thống Quản lý Hạ tầng CNTT & Đào tạo Trực tuyến Đại học (Thông tư 13/2020/TT-BGDĐT)",
+    "requirementText": "Phát triển phần mềm Quản lý hạ tầng CNTT, phòng máy thực hành và phần mềm hỗ trợ giảng dạy trực tuyến cho các đại học tại Việt Nam chuẩn hóa quy định Bộ Giáo dục & Đào tạo.",
+    "summary": "Phân rã hệ thống quản lý hạ tầng CNTT đại học theo Thông tư 13/2020/TT-BGDĐT Bộ GD&ĐT.",
+    "sourceReference": "Thông tư 13/2020/TT-BGDĐT Bộ Giáo dục & Đào tạo quy định Tiêu chuẩn hạ tầng CNTT đại học",
+    "sourceUrl": "https://thuvienphapluat.vn/van-ban/Tai-chinh-nha-nuoc/Thong-tu-13-2020-TT-BGDDT-tieu-chuan-co-so-vat-chat-truong-mam-non-tieu-hoc-trung-hoc-co-so-443719.aspx",
+    "evidenceBenchmark": "Căn cứ pháp lý Thư viện Pháp luật Thông tư 13/2020/TT-BGDĐT Bộ Giáo dục & Đào tạo.",
+    "tasks": [
+      {
+        "sprint": "Sprint 1",
+        "title": "Module Quản lý Đăng ký Phòng máy Thực hành CNTT Trực tuyến",
+        "description": "Sinh viên và Giảng viên đăng ký mượn phòng máy và thiết bị thực hành trực tuyến.",
+        "priority": "HIGH",
+        "estimatedDays": 3,
+        "bufferDays": 0,
+        "assignedRole": "Fullstack Developer"
       }
     ]
   }
