@@ -197,7 +197,15 @@ public class AiServiceImpl implements AiService {
 
         // Fetch existing message history in this specific thread BEFORE saving current prompt
         List<AiChatMessage> existingMsgs = messageRepository.findByThreadIdOrderByCreatedAtAsc(thread.getId());
-        boolean isFirstTurn = existingMsgs.isEmpty();
+        
+        long userTurnCount = existingMsgs.stream().filter(m -> m.getSenderType() == SenderType.USER).count() + 1;
+        String reqTextLower = request.getRequirementText().toLowerCase();
+        boolean isExplicitFinalize = reqTextLower.contains("chốt task") || reqTextLower.contains("tạo task") 
+                || reqTextLower.contains("phân rã ngay") || reqTextLower.contains("bóc tách ngay") 
+                || reqTextLower.contains("khởi tạo");
+
+        // Dynamic Multi-Turn Logic: Max 4 turns of interview unless user explicitly finalizes
+        boolean isClarificationMode = userTurnCount < 4 && !isExplicitFinalize;
 
         // Save User Prompt into Thread
         messageRepository.save(AiChatMessage.builder()
@@ -219,32 +227,57 @@ public class AiServiceImpl implements AiService {
         String ragSourceRef = matchedRagSample != null ? (String) matchedRagSample.getOrDefault("sourceReference", "Quy trình Đồ án Khoa CNTT IUH & IEEE Std 12207") : "PMBOK 7th Edition Agile Standards";
         String ragSourceUrl = matchedRagSample != null ? (String) matchedRagSample.getOrDefault("sourceUrl", "https://fit.iuh.edu.vn/") : "https://www.atlassian.com/agile/project-management/work-breakdown-structure";
 
+        // Build Full Conversation Memory History & Anchor Core Requirement
+        StringBuilder historyBuilder = new StringBuilder();
+        historyBuilder.append("=== YÊU CẦU CỐT LÕI BAN ĐẦU CỦA BÀI TOÁN (CORE REQUIREMENT ANCHOR) ===\n");
+        if (!existingMsgs.isEmpty()) {
+            historyBuilder.append(existingMsgs.get(0).getMessageContent()).append("\n\n");
+        } else {
+            historyBuilder.append(request.getRequirementText()).append("\n\n");
+        }
+
+        historyBuilder.append("=== LỊCH SỬ ĐÀM THOẠI VÀ CÁC THÔNG TIN BỔ SUNG TỪ NGƯỜI DÙNG ===\n");
+        for (AiChatMessage msg : existingMsgs) {
+            historyBuilder.append(msg.getSenderType() == SenderType.USER ? "Người Dùng: " : "AI Agent: ");
+            historyBuilder.append(msg.getMessageContent()).append("\n");
+        }
+        historyBuilder.append("Người Dùng (Mới nhất): ").append(request.getRequirementText()).append("\n");
+
         String systemPrompt;
-        if (isFirstTurn) {
-            // Turn 1: Clarification & Interview Phase (DO NOT GENERATE TASKS YET!)
+        if (isClarificationMode) {
+            // Clarification Phase (Up to Turn 3, DO NOT GENERATE TASKS YET!)
             systemPrompt = String.format("""
                 Bạn là một Requirement Agent (Product Owner / Business Analyst Co-Pilot) chuyên nghiệp cho hệ thống PROGA.
-                ĐÂY LÀ LƯỢT ĐÀM THOẠI ĐẦU TIÊN để làm rõ bài toán.
+                ĐÂY LÀ LƯỢT ĐÀM THOẠI THỨ %d (Tối đa 4 lượt phỏng vấn trước khi chốt Task).
                 Nhiệm vụ của bạn:
-                1. Đọc mô tả bài toán và đưa ra LỜI CHÀO NGẮN GỌN + 1-2 CÂU HỎI NGHIỆP VỤ TỔNG QUAN ĐƠN GIẢN (KHÔNG hỏi sâu kỹ thuật phức tạp, KHÔNG hỏi về thành viên).
+                1. Đọc nội dung đàm thoại và đưa ra LỜI CHÀO NGẮN GỌN + 1-2 CÂU HỎI ĐẠI KHÁI, ĐƠN GIẢN, DỄ HIỂU (KHÔNG dùng từ ngữ kỹ thuật phức tạp, KHÔNG hỏi số lượng Sprint vì bạn sẽ tự ước tính sau này. Chỉ hỏi về khoảng số lượng người tham gia hoặc quy trình ưu tiên).
                 2. Gợi ý 1 Tên dự án ngắn gọn rõ ràng trong 'suggestedSpaceName' (ví dụ: 'Hệ thống Quản lý Nhà hàng QR', 'Ứng dụng Y tế Telehealth').
-                3. BẮT BUỘC TRẢ VỀ MẢNG 'tasks': [] RỖNG NGUYÊN BẢN (KHÔNG TẠO TASK Ở LƯỢT ĐẦU!).
+                3. BẮT BUỘC TRẢ VỀ MẢNG 'tasks': [] RỖNG NGUYÊN BẢN.
                 
                 YÊU CẦU ĐỊNH DẠNG STRICT JSON:
                 {
                   "suggestedSpaceName": "Tên dự án ngắn gọn gợi ý",
-                  "summary": "Lời chào và 1-2 câu hỏi đàm thoại nghiệp vụ đơn giản",
+                  "summary": "Lời chào và 1-2 câu hỏi đàm thoại nghiệp vụ đại khái đơn giản",
                   "sourceReference": "%s",
                   "sourceUrl": "%s",
                   "tasks": []
                 }
-                """, ragSourceRef, ragSourceUrl);
+                """, userTurnCount, ragSourceRef, ragSourceUrl);
         } else {
-            // Turn 2+: Task Breakdown Phase
+            // Finalization Phase (Turn 4+ OR User explicit request "Chốt task")
             systemPrompt = String.format("""
                 Bạn là một Requirement Agent (Product Owner / Business Analyst) chuyên nghiệp cho hệ thống PROGA.
-                BẠN BẮT BUỘC BÓC TÁCH TASK DỰA TRÊN CHÍNH NGÀNH NGHỀ BÀI TOÁN CỦA NGƯỜI DÙNG.
-                Bây giờ hãy bóc tách danh sách từ 8 - 15 Task cụ thể phân theo Sprint 1 tuần (Sprint 1, Sprint 2, Sprint 3).
+                CẢNH BÁO TỐI CAO VỀ BÀI TOÁN & QUY TRÌNH PHÂN RÃ:
+                1. BẮT BUỘC BÓC TÁCH TASK BAO QUÁT 100%% BÀI TOÁN CỐT LÕI BAN ĐẦU LẪN THÔNG TIN BỔ SUNG TRONG LỊCH SỬ DÀM THOẠI. TUYỆT ĐỐI KHÔNG ĐƯỢC QUÊN CÁC CHỨC NĂNG CHÍNH BAN ĐẦU (VD: Telehealth WebRTC, Đặt lịch khám, Bệnh án EHR AES-256...).
+                2. BẮT BUỘC BÓC TÁCH ĐẦY ĐỦ VÒNG ĐỜI DỰ ÁN PHẦN MỀM THỰC TẾ THEO 4 GIAI ĐOẠN:
+                   - Giai đoạn 1: Thiết kế Cơ sở Dữ liệu, Kiến trúc Lõi & Phân quyền SSO / Mã hóa Bảo mật (Auth/AES-256).
+                   - Giai đoạn 2: Các Chức năng Nghiệp vụ Cốt lõi của bài toán (Đặt lịch, Khám Telehealth WebRTC, Hồ sơ EHR...).
+                   - Giai đoạn 3: Tích hợp Module Phụ trợ & Thanh toán/Thông báo (VNPAY IPN, Zalo ZNS / Email).
+                   - Giai đoạn 4: Kiểm thử (QA / Security Audit OWASP / NIST), UAT & Bàn giao.
+                3. QUY TẮC NỐI TIẾP DỰ ÁN ĐANG DIỄN RA: NẾU TRONG PROMPT NGƯỜI DÙNG CÓ GỬI DỮ LIỆU 'NGỮ CẢNH DỰ ÁN HIỆN TẠI' (Có thông tin Sprint cao nhất hiện tại là Sprint N), BẠN BẮT BUỘC ĐẶT TÊN CÁC SPRINT MỚI TẠO RA LÀ "Sprint N+1", "Sprint N+2"... TUYỆT ĐỐI KHÔNG ĐƯỢC ĐẶT TÊN LÀ "Sprint 1", "Sprint 2" HAY THAY ĐỔI CÁC TASK TRONG SPRINT ĐANG THỰC HIỆN CŨ! CÁC TASK MỚI PHẢI ĐƯỢC NỐI TIẾP VÀ KHÔNG TRÙNG LẶP NỘI DUNG VỚI CÁC TASK ĐÃ CÓ.
+                4. BẠN TỰ ĐỘNG ƯỚC TÍNH SỐ SPRINT VÀ THỜI GIAN dựa trên quy mô bài toán và nhân sự THEO BẰNG CHỨNG BENCHMARK THỰC TẾ (Phân bổ linh hoạt 3 - 6+ Sprint).
+                5. ĐÁNH GIÁ RỦI RO THEO BẰNG CHỨNG BENCHMARK THỰC TẾ: Các cảnh báo rủi ro ('riskWarning') phải trích dẫn căn cứ thực tế (Ví dụ: Thông tư 46/2018/TT-BYT, Tiêu chuẩn NIST SP 800-38A mã hóa AES-256, Tiêu chuẩn HLS RFC 8216, OWASP Top 10).
+                
                 Gán vai trò chuyên môn (assignedRole: Backend Developer, Frontend Developer, QA Lead, DevOps, System Architect) cho từng task.
                 
                 ĐÂY LÀ MẪU RAG THAM KHẢO CẤU TRÚC (%s):
@@ -253,26 +286,26 @@ public class AiServiceImpl implements AiService {
                 YÊU CẦU ĐỊNH DẠNG STRICT JSON:
                 {
                   "suggestedSpaceName": "Tên dự án gợi ý",
-                  "summary": "Tóm tắt ngắn gọn việc bóc tách danh sách WBS Tasks dựa trên đàm thoại",
+                  "summary": "Tóm tắt ngắn gọn việc bóc tách danh sách WBS Tasks dựa trên đàm thoại và các căn cứ tiêu chuẩn benchmark thực tế",
                   "sourceReference": "%s",
                   "sourceUrl": "%s",
                   "tasks": [
                     {
-                      "sprint": "Sprint 1",
+                      "sprint": "Sprint 1 (Hoặc Sprint N+1 nếu mở rộng Space có sẵn)",
                       "title": "Tên task ngắn gọn rõ ràng",
                       "description": "Mô tả công việc chi tiết",
                       "priority": "HIGH / MEDIUM / LOW / URGENT",
                       "estimatedDays": 3,
                       "bufferDays": 1,
                       "assignedRole": "Backend Developer / Frontend Developer / QA Lead / DevOps / System Architect",
-                      "riskWarning": "Cảnh báo rủi ro ngắn gọn (Chỉ điền nếu priority là URGENT hoặc HIGH, để null nếu bình thường)"
+                      "riskWarning": "Cảnh báo rủi ro có căn cứ benchmark thực tế (Chỉ điền nếu URGENT/HIGH, để null nếu bình thường)"
                     }
                   ]
                 }
                 """, ragSourceRef, sampleJsonContext, ragSourceRef, ragSourceUrl);
         }
 
-        String userPrompt = "Nội dung người dùng gửi:\n" + request.getRequirementText();
+        String userPrompt = historyBuilder.toString();
         String rawResponse = callAiModel(systemPrompt, userPrompt);
 
         TaskDecompositionResponse responseObj;
@@ -284,20 +317,25 @@ public class AiServiceImpl implements AiService {
             Map<String, Object> parsed = objectMapper.readValue(cleanedJson, new TypeReference<Map<String, Object>>() {});
             
             String summary = (String) parsed.getOrDefault("summary", "Đã phân rã yêu cầu thành công");
-            String respSourceRef = (String) parsed.getOrDefault("sourceReference", ragSourceRef);
-            String respSourceUrl = (String) parsed.getOrDefault("sourceUrl", ragSourceUrl);
+            // Enforce verified RAG dataset source reference and URL to prevent LLM hallucinations
+            String respSourceRef = (matchedRagSample != null && matchedRagSample.containsKey("sourceReference")) 
+                    ? (String) matchedRagSample.get("sourceReference") 
+                    : (String) parsed.getOrDefault("sourceReference", ragSourceRef);
+            String respSourceUrl = (matchedRagSample != null && matchedRagSample.containsKey("sourceUrl")) 
+                    ? (String) matchedRagSample.get("sourceUrl") 
+                    : (String) parsed.getOrDefault("sourceUrl", ragSourceUrl);
             List<TaskDecompositionResponse.DecomposedTaskItem> taskItems;
 
             String suggestedSpaceName = (String) parsed.get("suggestedSpaceName");
 
-            if (isFirstTurn) {
-                // TURN 1 GUARANTEE: Strictly return empty tasks array!
+            if (isClarificationMode) {
+                // CLARIFICATION PHASE: Strictly return empty tasks array!
                 taskItems = Collections.emptyList();
                 if (summary == null || summary.isBlank() || summary.contains("Đã phân rã")) {
-                    summary = "Chào bạn! Tôi là Requirement Agent (PO/BA). Để hỗ trợ bóc tách danh sách WBS Tasks chính xác nhất cho dự án của bạn, tôi cần trao đổi 1-2 điểm nghiệp vụ tổng quan sau:\n" +
+                    summary = String.format("Chào bạn! Tôi là Requirement Agent (PO/BA). Đây là lượt đàm thoại thứ %d/4. Để hỗ trợ bóc tách Bảng Task WBS chính xác nhất, tôi xin trao đổi 1-2 điểm đại khái sau:\n" +
                               "1. Quy trình nghiệp vụ cốt lõi mà bạn muốn ưu tiên số 1 trong dự án là gì?\n" +
-                              "2. Dự án dự kiến triển khai trong khoảng bao nhiêu Sprint (mỗi Sprint 1 tuần)?\n\n" +
-                              "👉 Bạn phản hồi lại các thông tin trên (hoặc gõ 'Chốt task ngay') để tôi bắt đầu khởi tạo Bảng Task nhé!";
+                              "2. Đội ngũ của bạn có khoảng bao nhiêu thành viên và gồm những vai trò nào (ví dụ: Backend, Frontend, QA)?\n\n" +
+                              "👉 Bạn phản hồi thông tin trên (hoặc gõ 'Chốt task ngay') để tôi bắt đầu phân rã Bảng Task nhé!", userTurnCount);
                 }
             } else {
                 List<Map<String, Object>> tasksRaw = (List<Map<String, Object>>) parsed.getOrDefault("tasks", Collections.emptyList());

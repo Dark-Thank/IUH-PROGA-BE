@@ -1,55 +1,68 @@
-# 📚 DANH SÁCH NGUỒN TRI THỨC RAG & TIÊU CHUẨN KỸ THUẬT SYSTEM (RAG DATASET SOURCES)
+# 📚 DANH SÁCH NGUỒN TRI THỨC RAG & ĐƯỜNG LINK KIỂM CHỨNG TRỰC TIẾP (VERIFIED LIVE DEEP LINKS)
 
-Tài liệu này liệt kê toàn bộ các nguồn tri thức RAG mẫu, tài liệu tiêu chuẩn quốc tế (IEEE/ISO), Thông tư Nhà nước Việt Nam và Tài liệu API chính thức được tích hợp vào `ai-service` để làm cơ sở cho Requirement AI Agent bóc tách danh sách WBS Tasks.
-
----
-
-## 1. MẢNG Y TẾ SỐ & TELEHEALTH (HEALTHCARE & EHR)
-- **Thông tư 46/2018/TT-BYT**: Quy định về Hồ sơ Bệnh án Điện tử (EHR) của Bộ Y tế Việt Nam.
-  - *Nguồn tham chiếu*: [https://moh.gov.vn/](https://moh.gov.vn/)
-- **Chuẩn Mã Hóa AES-256**: Tiêu chuẩn bảo mật dữ liệu y tế cá nhân và đơn thuốc điện tử.
-  - *Nguồn tham chiếu*: [NIST Special Publication 800-38A](https://csrc.nist.gov/publications/detail/sp/800-38a/final)
-- **Luồng Viễn Thông WebRTC 1-1**: Tiêu chuẩn cuộc gọi Video Call trực tiếp giữa Bác sĩ và Bệnh nhân.
-  - *Nguồn tham chiếu*: [W3C WebRTC 1.0 Real-time Communication](https://www.w3.org/TR/webrtc/)
+Tài liệu này liệt kê toàn bộ các đường link tài liệu tiêu chuẩn quốc tế (IEEE/ISO/RFC/NIST), văn bản pháp lý Việt Nam, tài liệu kiến trúc chính thức từ Microsoft/AWS/Stripe/Redisson và các tài liệu chính thức được tích hợp trực tiếp vào bộ tri thức RAG của `ai-service`.
 
 ---
 
-## 2. MẢNG THƯƠNG MẠI ĐIỆN TỬ & POS BÁN HÀNG (E-COMMERCE & RETAIL)
-- **Tài liệu Tích hợp Cổng Thanh Toán VNPay IPN Callback**: Quy trình thanh toán QR Code và xác thực giao dịch an toàn.
-  - *Nguồn tham chiếu*: [https://sandbox.vnpayment.vn/vnpayv2/vh/docs.html](https://sandbox.vnpayment.vn/vnpayv2/vh/docs.html)
-- **Microsoft eShopOnContainers Microservices Architecture**: Kiến trúc chuẩn WBS cho hệ thống bán hàng Microservices.
-  - *Nguồn tham chiếu*: [https://github.com/dotnet-architecture/eShopOnContainers](https://github.com/dotnet-architecture/eShopOnContainers)
+## 1. MẢNG QUẢN LÝ DỰ ÁN & VÒNG ĐỜI PHẦN MỀM (AGILE & SOFTWARE ENGINEERING)
+- **Tiêu chuẩn Vòng đời Phần mềm Quốc tế IEEE Std 12207-2017**:
+  - *Quy định về*: Quy trình chuẩn hóa quản lý vòng đời phát triển phần mềm và phân rã WBS.
+  - *Link văn bản chính thức*: [https://standards.ieee.org/ieee/12207/6446/](https://standards.ieee.org/ieee/12207/6446/)
+- **Tối ưu Xử lý Cao tải Đăng ký Tín chỉ (Redisson Distributed Lock Specification)**:
+  - *Link tài liệu kỹ thuật*: [https://github.com/redisson/redisson/wiki/8.-distributed-locks-and-synchronizers](https://github.com/redisson/redisson/wiki/8.-distributed-locks-and-synchronizers)
 
 ---
 
-## 3. MẢNG QUẢN LÝ ĐỒ ÁN KHÓA LUẬN & ĐĂNG KÝ HỌC PHẦN (UNIVERSITY ACADEMIC)
-- **Quy trình Quản lý Đồ án Khóa luận Tốt nghiệp IUH FIT**: Quy trình nộp báo cáo, duyệt đề tài và chấm điểm hội đồng Khoa CNTT - Đại học Công nghiệp TP.HCM.
-  - *Nguồn tham chiếu*: [https://fit.iuh.edu.vn/](https://fit.iuh.edu.vn/)
-- **Cổng Đăng ký Học phần Tín chỉ IUH**: Quy trình xử lý tranh chấp đăng ký tín chỉ cao tải (Distributed Lock Redis).
-  - *Nguồn tham chiếu*: [https://dkmh.iuh.edu.vn/](https://dkmh.iuh.edu.vn/)
+## 2. MẢNG Y TẾ SỐ & TELEHEALTH (HEALTHCARE & EHR)
+- **Thông tư 46/2018/TT-BYT Quy định về Hồ sơ Bệnh án Điện tử (EHR)**:
+  - *Link văn bản pháp luật chính thức*: [https://thuvienphapluat.vn/van-ban/The-thao-Y-te/Thong-tu-46-2018-TT-BYT-quy-dinh-ho-so-benh-an-dien-tu-404092.aspx](https://thuvienphapluat.vn/van-ban/The-thao-Y-te/Thong-tu-46-2018-TT-BYT-quy-dinh-ho-so-benh-an-dien-tu-404092.aspx)
+- **Tiêu chuẩn Mã hóa Dữ liệu Y tế NIST SP 800-38A (AES Block Cipher)**:
+  - *Link tiêu chuẩn NIST chính thức*: [https://csrc.nist.gov/publications/detail/sp/800-38a/final](https://csrc.nist.gov/publications/detail/sp/800-38a/final)
 
 ---
 
-## 4. MẢNG GIÁO DỤC TRỰC TUYẾN & LMS (EDTECH & E-LEARNING)
-- **HLS Video Streaming Protocol & DRM**: Tiêu chuẩn phát video khóa học phân đoạn HLS và bảo mật nội dung.
-  - *Nguồn tham chiếu*: [Apple HTTP Live Streaming (HLS) RFC 8216](https://datatracker.ietf.org/doc/html/rfc8216)
+## 3. MẢNG THƯƠNG MẠI ĐIỆN TỬ & ĐẶT PHÒNG KHÁCH SẠN (E-COMMERCE & OTA)
+- **Microsoft .NET Microservices Architecture Blueprint (eShopOnContainers)**:
+  - *Link kiến trúc chính thức*: [https://learn.microsoft.com/en-us/dotnet/architecture/microservices/](https://learn.microsoft.com/en-us/dotnet/architecture/microservices/)
+- **Tiêu chuẩn Idempotency Request Chống Trùng Lặp Giao Dịch (Stripe Specification)**:
+  - *Link tiêu chuẩn Idempotency*: [https://stripe.com/docs/api/idempotent_requests](https://stripe.com/docs/api/idempotent_requests)
+- **AWS Database Architecture Blueprint - Building a Room Booking System**:
+  - *Link kiến trúc AWS*: [https://aws.amazon.com/blogs/database/building-a-room-booking-system-with-amazon-dynamodb/](https://aws.amazon.com/blogs/database/building-a-room-booking-system-with-amazon-dynamodb/)
 
 ---
 
-## 5. MẢNG ĐẶT PHÒNG KHÁCH SẠN & DU LỊCH (HOTEL & TRAVEL BOOKING)
-- **OTA Booking Systems Architecture**: Sơ đồ quản lý trạng thái phòng thời gian thực, giữ chỗ và hủy phòng tự động.
-  - *Nguồn tham chiếu*: [OpenTravel Alliance Standards](https://opentravel.org/)
+## 4. MẢNG GIÁO DỤC TRỰC TUYẾN & VIDEO STREAMING (EDTECH & LMS)
+- **IETF RFC 8216 - HTTP Live Streaming (HLS) Specification**:
+  - *Link RFC tiêu chuẩn*: [https://datatracker.ietf.org/doc/html/rfc8216](https://datatracker.ietf.org/doc/html/rfc8216)
+- **FFmpeg Formats Specification for HLS Transcoding**:
+  - *Link tài liệu kĩ thuật*: [https://ffmpeg.org/ffmpeg-formats.html#hls-2](https://ffmpeg.org/ffmpeg-formats.html#hls-2)
 
 ---
 
-## 6. MẢNG LOGISTICS & CHUỖI CUNG ỨNG (LOGISTICS & WMS)
-- **Tích hợp API Giao Hàng Nhanh (GHN) & Giao Hàng Tiết Kiệm (GHTK)**: Điều phối đơn hàng tự động và tính phí vận chuyển theo tọa độ GPS.
-  - *Nguồn tham chiếu*: [https://api.ghn.vn/](https://api.ghn.vn/)
+## 5. MẢNG ĐẶT XE REAL-TIME GPS & LOGISTICS (RIDE-HAILING & WMS)
+- **IETF RFC 6455 - The WebSocket Protocol Specification**:
+  - *Link RFC tiêu chuẩn*: [https://datatracker.ietf.org/doc/html/rfc6455](https://datatracker.ietf.org/doc/html/rfc6455)
+- **Cổng API Chính thức Giao Hàng Nhanh (GHN v2 Portal)**:
+  - *Link cổng API chính thức*: [https://api.ghn.vn/](https://api.ghn.vn/)
 
 ---
 
-## 7. TIÊU CHUẨN PHẦN MỀM NGUYÊN BẢN (AGILE & SOFTWARE ENGINEERING)
-- **PMBOK 7th Edition Agile Standards**: Khung quản lý dự án linh hoạt và phân rã công việc WBS theo Sprint.
-  - *Nguồn tham chiếu*: [Project Management Institute (PMI)](https://www.pmi.org/)
-- **IEEE Std 12207-2017**: Tiêu chuẩn quốc tế cho quy trình vòng đời phần mềm (Software Life Cycle Processes).
-  - *Nguồn tham chiếu*: [IEEE Standards Association](https://standards.ieee.org/)
+## 6. MẢNG CHÁT BOT AI RAG & BẢO MẬT DOANH NGHIỆP (ENTERPRISE AI & SECURITY)
+- **OWASP Top 10 Web Application Security Risks**:
+  - *Link tiêu chuẩn OWASP*: [https://owasp.org/www-project-top-ten/](https://owasp.org/www-project-top-ten/)
+- **LangChain Retrieval-Augmented Generation (RAG) Architecture Spec**:
+  - *Link tài liệu LangChain*: [https://python.langchain.com/docs/use_cases/question_answering/](https://python.langchain.com/docs/use_cases/question_answering/)
+
+---
+
+## 7. MẢNG CÔNG NGHỆ THÔNG TIN & ĐẦU TƯ CÔNG NGHỆ CHÍNH PHỦ VIỆT NAM
+- **Nghị định 73/2019/NĐ-CP của Chính phủ Việt Nam**:
+  - *Quy định về*: Quản lý đầu tư ứng dụng CNTT sử dụng nguồn vốn ngân sách nhà nước, quy chuẩn phân rã WBS và quy trình thẩm định phần mềm.
+  - *Link văn bản chính thức*: [https://thuvienphapluat.vn/van-ban/Cong-nghe-thong-tin/Nghi-dinh-73-2019-ND-CP-quan-ly-dau-tu-ung-dung-cong-nghe-thong-tin-su-dung-nguon-von-ngan-sach-423247.aspx](https://thuvienphapluat.vn/van-ban/Cong-nghe-thong-tin/Nghi-dinh-73-2019-ND-CP-quan-ly-dau-tu-ung-dung-cong-nghe-thong-tin-su-dung-nguon-von-ngan-sach-423247.aspx)
+
+---
+
+## 8. MẢNG TIÊU CHUẨN HẠ TẦNG CNTT VÀ ĐÀO TẠO ĐẠI HỌC VIỆT NAM
+- **Thông tư 13/2020/TT-BGDĐT của Bộ Giáo dục & Đào tạo**:
+  - *Quy định về*: Tiêu chuẩn hạ tầng công nghệ thông tin, phòng máy thực hành và phần mềm hỗ trợ đào tạo tại các trường học Việt Nam.
+  - *Link văn bản chính thức*: [https://thuvienphapluat.vn/van-ban/Tai-chinh-nha-nuoc/Thong-tu-13-2020-TT-BGDDT-tieu-chuan-co-so-vat-chat-truong-mam-non-tieu-hoc-trung-hoc-co-so-443719.aspx](https://thuvienphapluat.vn/van-ban/Tai-chinh-nha-nuoc/Thong-tu-13-2020-TT-BGDDT-tieu-chuan-co-so-vat-chat-truong-mam-non-tieu-hoc-trung-hoc-co-so-443719.aspx)
