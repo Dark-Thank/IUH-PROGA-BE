@@ -317,12 +317,12 @@ public class AiServiceImpl implements AiService {
             Map<String, Object> parsed = objectMapper.readValue(cleanedJson, new TypeReference<Map<String, Object>>() {});
             
             String summary = (String) parsed.getOrDefault("summary", "Đã phân rã yêu cầu thành công");
-            // Enforce verified RAG dataset source reference and URL to prevent LLM hallucinations
-            String respSourceRef = (matchedRagSample != null && matchedRagSample.containsKey("sourceReference")) 
-                    ? (String) matchedRagSample.get("sourceReference") 
+            // Enforce verified RAG dataset tri-anchor benchmark reference and URL
+            String respSourceRef = (matchedRagSample != null) 
+                    ? (String) matchedRagSample.getOrDefault("evidenceBenchmark", (String) matchedRagSample.getOrDefault("sourceReference", ragSourceRef)) 
                     : (String) parsed.getOrDefault("sourceReference", ragSourceRef);
-            String respSourceUrl = (matchedRagSample != null && matchedRagSample.containsKey("sourceUrl")) 
-                    ? (String) matchedRagSample.get("sourceUrl") 
+            String respSourceUrl = (matchedRagSample != null) 
+                    ? (String) matchedRagSample.getOrDefault("legalTechnicalUrl", (String) matchedRagSample.getOrDefault("sourceUrl", ragSourceUrl)) 
                     : (String) parsed.getOrDefault("sourceUrl", ragSourceUrl);
             List<TaskDecompositionResponse.DecomposedTaskItem> taskItems;
 
