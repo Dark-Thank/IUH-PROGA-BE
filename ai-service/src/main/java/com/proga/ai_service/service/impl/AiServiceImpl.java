@@ -13,6 +13,7 @@ import com.proga.ai_service.model.SenderType;
 import com.proga.ai_service.repository.AiChatMessageRepository;
 import com.proga.ai_service.repository.AiThreadRepository;
 import com.proga.ai_service.service.AiService;
+import com.proga.ai_service.service.VectorStoreService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -38,6 +39,7 @@ public class AiServiceImpl implements AiService {
     private final AiChatMessageRepository messageRepository;
     private final WorkspaceClient workspaceClient;
     private final ObjectMapper objectMapper;
+    private final VectorStoreService vectorStoreService;
 
     @Autowired(required = false)
     private ChatModel chatModel;
@@ -171,6 +173,32 @@ public class AiServiceImpl implements AiService {
         return bestSample;
     }
 
+    private List<String> extractAllCitationUrls(Map<String, Object> matchedRagSample) {
+        Set<String> urls = new LinkedHashSet<>();
+        if (matchedRagSample != null) {
+            if (matchedRagSample.get("projectManagementUrl") != null) {
+                urls.add((String) matchedRagSample.get("projectManagementUrl"));
+            }
+            if (matchedRagSample.get("legalTechnicalUrl") != null) {
+                urls.add((String) matchedRagSample.get("legalTechnicalUrl"));
+            }
+            if (matchedRagSample.get("empiricalProjectMilestoneUrl") != null) {
+                urls.add((String) matchedRagSample.get("empiricalProjectMilestoneUrl"));
+            }
+            if (matchedRagSample.get("sourceUrl") != null) {
+                urls.add((String) matchedRagSample.get("sourceUrl"));
+            }
+        }
+        // Always include verified standard project management baseline citation URLs
+        urls.add("https://scrumguides.org/scrum-guide.html");
+        urls.add("https://www.agilealliance.org/agile101/");
+        urls.add("https://www.tempo.io/blog/jira-project-types");
+        urls.add("https://www.eclipse.org/projects/dev_process/");
+        urls.add("https://clickup.com/vi/blog/486277/jira-project-management-template");
+
+        return new ArrayList<>(urls);
+    }
+
     @Override
     @Transactional
     public TaskDecompositionResponse decomposeRequirements(TaskDecompositionRequest request) {
@@ -202,10 +230,7 @@ public class AiServiceImpl implements AiService {
         String reqTextLower = request.getRequirementText().toLowerCase();
         boolean isExplicitFinalize = reqTextLower.contains("chốt task") || reqTextLower.contains("tạo task") 
                 || reqTextLower.contains("phân rã ngay") || reqTextLower.contains("bóc tách ngay") 
-                || reqTextLower.contains("khởi tạo");
-
-        // Dynamic Multi-Turn Logic: Max 4 turns of interview unless user explicitly finalizes
-        boolean isClarificationMode = userTurnCount < 4 && !isExplicitFinalize;
+                || reqTextLower.contains("khởi tạo ngay");
 
         // Save User Prompt into Thread
         messageRepository.save(AiChatMessage.builder()
@@ -216,6 +241,8 @@ public class AiServiceImpl implements AiService {
 
         // Perform RAG Similarity Retrieval
         Map<String, Object> matchedRagSample = findBestMatchingRagSample(request.getRequirementText());
+        List<String> allCitationUrls = extractAllCitationUrls(matchedRagSample);
+
         String sampleJsonContext = "";
         if (matchedRagSample != null) {
             try {
@@ -224,8 +251,18 @@ public class AiServiceImpl implements AiService {
         }
 
         // Extract source references from RAG sample
-        String ragSourceRef = matchedRagSample != null ? (String) matchedRagSample.getOrDefault("sourceReference", "Quy trình Đồ án Khoa CNTT IUH & IEEE Std 12207") : "PMBOK 7th Edition Agile Standards";
-        String ragSourceUrl = matchedRagSample != null ? (String) matchedRagSample.getOrDefault("sourceUrl", "https://fit.iuh.edu.vn/") : "https://www.atlassian.com/agile/project-management/work-breakdown-structure";
+        String ragSourceRef = matchedRagSample != null ? (String) matchedRagSample.getOrDefault("evidenceBenchmark", (String) matchedRagSample.getOrDefault("sourceReference", "PMBOK 7th Edition & IEEE Std 12207")) : "PMBOK 7th Edition & Scrum Guide Standards";
+        String ragSourceUrl = allCitationUrls.isEmpty() ? "https://scrumguides.org/scrum-guide.html" : allCitationUrls.get(0);
+
+        // Perform Vector Similarity Search over PgVector Store if available
+        List<org.springframework.ai.document.Document> vectorDocs = vectorStoreService.searchSimilarDocuments(request.getRequirementText(), 3);
+        if (!vectorDocs.isEmpty()) {
+            StringBuilder vContext = new StringBuilder("\n=== NỘI DUNG TÀI LIỆU TRUY VẤN NỐI TỪ PGVECTOR STORE ===\n");
+            for (org.springframework.ai.document.Document doc : vectorDocs) {
+                vContext.append("- Chunk Content: ").append(doc.getText()).append("\n");
+            }
+            sampleJsonContext += vContext.toString();
+        }
 
         // Build Full Conversation Memory History & Anchor Core Requirement
         StringBuilder historyBuilder = new StringBuilder();
@@ -243,48 +280,84 @@ public class AiServiceImpl implements AiService {
         }
         historyBuilder.append("Người Dùng (Mới nhất): ").append(request.getRequirementText()).append("\n");
 
+        boolean isClarificationStage = userTurnCount == 1 && !isExplicitFinalize;
+        boolean isDemoPlanStage = userTurnCount == 2 && !isExplicitFinalize;
+
         String systemPrompt;
-        if (isClarificationMode) {
-            // Clarification Phase (Up to Turn 3, DO NOT GENERATE TASKS YET!)
+        if (isClarificationStage) {
+            // STAGE 1 (TURN 1): Mandatory Clarification Interview with Sample Answers
             systemPrompt = String.format("""
                 Bạn là một Requirement Agent (Product Owner / Business Analyst Co-Pilot) chuyên nghiệp cho hệ thống PROGA.
-                ĐÂY LÀ LƯỢT ĐÀM THOẠI THỨ %d (Tối đa 4 lượt phỏng vấn trước khi chốt Task).
+                ĐÂY LÀ LƯỢT ĐÀM THOẠI LẦN THỨ 1 (Giai đoạn Phỏng vấn Nghiệp vụ ban đầu).
+                DÙ NGƯỜI DÙNG ĐÃ GỬI MÔ TẢ DÀI HOẶC NẠP FILE KẾ HOẠCH, BẠN BẮT BUỘC THỰC HIỆN PHỎNG VẤN 1-2 CÂU HỎI LÀM RÕ TRƯỚC!
+
                 Nhiệm vụ của bạn:
-                1. Đọc nội dung đàm thoại và đưa ra LỜI CHÀO NGẮN GỌN + 1-2 CÂU HỎI ĐẠI KHÁI, ĐƠN GIẢN, DỄ HIỂU (KHÔNG dùng từ ngữ kỹ thuật phức tạp, KHÔNG hỏi số lượng Sprint vì bạn sẽ tự ước tính sau này. Chỉ hỏi về khoảng số lượng người tham gia hoặc quy trình ưu tiên).
-                2. Gợi ý 1 Tên dự án ngắn gọn rõ ràng trong 'suggestedSpaceName' (ví dụ: 'Hệ thống Quản lý Nhà hàng QR', 'Ứng dụng Y tế Telehealth').
-                3. BẮT BUỘC TRẢ VỀ MẢNG 'tasks': [] RỖNG NGUYÊN BẢN.
-                
+                1. Đọc yêu cầu bài toán/file nạp vào. Chào người dùng ngắn gọn và ghi nhận đã nhận được bài toán/tài liệu.
+                2. Đưa ra 1 - 2 câu hỏi nghiệp vụ làm rõ ngắn gọn, đơn giản, dễ hiểu.
+                3. BẮT BUỘC KÈM 1-2 VÍ DỤ / GỢI Ý TRẢ LỜI MẪU NGẮN GỌN CHO MỖI CÂU HỎI (Ví dụ: "👉 Gợi ý trả lời mẫu: Option A: Ưu tiên Đặt lịch khám / Option B: Ưu tiên Khám Telehealth").
+                4. Gợi ý 1 Tên dự án phù hợp trong `suggestedSpaceName`.
+                5. Trả về `isDataSufficient`: false và `tasks`: [] RỖNG NGUYÊN BẢN.
+
                 YÊU CẦU ĐỊNH DẠNG STRICT JSON:
                 {
-                  "suggestedSpaceName": "Tên dự án ngắn gọn gợi ý",
-                  "summary": "Lời chào và 1-2 câu hỏi đàm thoại nghiệp vụ đại khái đơn giản",
+                  "isDataSufficient": false,
+                  "suggestedSpaceName": "Tên dự án gợi ý",
+                  "summary": "Lời chào + 1-2 câu hỏi phỏng vấn nghiệp vụ kèm gợi ý trả lời mẫu ngắn gọn",
                   "sourceReference": "%s",
                   "sourceUrl": "%s",
                   "tasks": []
                 }
-                """, userTurnCount, ragSourceRef, ragSourceUrl);
-        } else {
-            // Finalization Phase (Turn 4+ OR User explicit request "Chốt task")
+                """, ragSourceRef, ragSourceUrl);
+
+        } else if (isDemoPlanStage) {
+            // STAGE 2 (TURN 2): Demo Plan Preview & Benchmark Citations for User Confirmation
             systemPrompt = String.format("""
-                Bạn là một Requirement Agent (Product Owner / Business Analyst) chuyên nghiệp cho hệ thống PROGA.
-                CẢNH BÁO TỐI CAO VỀ BÀI TOÁN & QUY TRÌNH PHÂN RÃ:
-                1. BẮT BUỘC BÓC TÁCH TASK BAO QUÁT 100%% BÀI TOÁN CỐT LÕI BAN ĐẦU LẪN THÔNG TIN BỔ SUNG TRONG LỊCH SỬ DÀM THOẠI. TUYỆT ĐỐI KHÔNG ĐƯỢC QUÊN CÁC CHỨC NĂNG CHÍNH BAN ĐẦU (VD: Telehealth WebRTC, Đặt lịch khám, Bệnh án EHR AES-256...).
-                2. BẮT BUỘC BÓC TÁCH ĐẦY ĐỦ VÒNG ĐỜI DỰ ÁN PHẦN MỀM THỰC TẾ THEO 4 GIAI ĐOẠN:
-                   - Giai đoạn 1: Thiết kế Cơ sở Dữ liệu, Kiến trúc Lõi & Phân quyền SSO / Mã hóa Bảo mật (Auth/AES-256).
-                   - Giai đoạn 2: Các Chức năng Nghiệp vụ Cốt lõi của bài toán (Đặt lịch, Khám Telehealth WebRTC, Hồ sơ EHR...).
-                   - Giai đoạn 3: Tích hợp Module Phụ trợ & Thanh toán/Thông báo (VNPAY IPN, Zalo ZNS / Email).
-                   - Giai đoạn 4: Kiểm thử (QA / Security Audit OWASP / NIST), UAT & Bàn giao.
-                3. QUY TẮC NỐI TIẾP DỰ ÁN ĐANG DIỄN RA: NẾU TRONG PROMPT NGƯỜI DÙNG CÓ GỬI DỮ LIỆU 'NGỮ CẢNH DỰ ÁN HIỆN TẠI' (Có thông tin Sprint cao nhất hiện tại là Sprint N), BẠN BẮT BUỘC ĐẶT TÊN CÁC SPRINT MỚI TẠO RA LÀ "Sprint N+1", "Sprint N+2"... TUYỆT ĐỐI KHÔNG ĐƯỢC ĐẶT TÊN LÀ "Sprint 1", "Sprint 2" HAY THAY ĐỔI CÁC TASK TRONG SPRINT ĐANG THỰC HIỆN CŨ! CÁC TASK MỚI PHẢI ĐƯỢC NỐI TIẾP VÀ KHÔNG TRÙNG LẶP NỘI DUNG VỚI CÁC TASK ĐÃ CÓ.
-                4. BẠN TỰ ĐỘNG ƯỚC TÍNH SỐ SPRINT VÀ THỜI GIAN dựa trên quy mô bài toán và nhân sự THEO BẰNG CHỨNG BENCHMARK THỰC TẾ (Phân bổ linh hoạt 3 - 6+ Sprint).
-                5. ĐÁNH GIÁ RỦI RO THEO BẰNG CHỨNG BENCHMARK THỰC TẾ: Các cảnh báo rủi ro ('riskWarning') phải trích dẫn căn cứ thực tế (Ví dụ: Thông tư 46/2018/TT-BYT, Tiêu chuẩn NIST SP 800-38A mã hóa AES-256, Tiêu chuẩn HLS RFC 8216, OWASP Top 10).
-                
-                Gán vai trò chuyên môn (assignedRole: Backend Developer, Frontend Developer, QA Lead, DevOps, System Architect) cho từng task.
-                
-                ĐÂY LÀ MẪU RAG THAM KHẢO CẤU TRÚC (%s):
-                %s
-                
+                Bạn là một Requirement Agent (Product Owner / Business Analyst Co-Pilot) chuyên nghiệp cho hệ thống PROGA.
+                ĐÂY LÀ LƯỢT ĐÀM THOẠI LẦN THỨ 2 (Giai đoạn Đưa ra Bản Kế Hoạch Demo & Link Chứng Thực Thực Tế Để Người Dùng Phê Duyệt).
+
+                Nhiệm vụ của bạn:
+                1. Xây dựng BẢN KẾ HOẠCH DEMO DỰ ÁN ngắn gọn, chuyên nghiệp trình bày trong trường `summary` bao gồm:
+                   - 📌 **Tên Dự Án Gợi Ý**
+                   - ⏱️ **Quy Mô Dự Kiến**: Số lượng Sprint (VD: 4 Sprints, ~6-8 tuần) & Phân bổ nhân sự (Backend, Frontend, QA, DevOps).
+                   - 🔗 **Căn Cứ Benchmark & Các Link Chứng Thực Thực Tế**: Liệt kê các căn cứ tiêu chuẩn (Scrum Guide, IEEE Std 12207, Thông tư Bộ Y tế/NIST, Apache/Moodle Public Jira Trackers).
+                   - 📋 **Tóm Tắt 4 Giai Đoạn WBS Milestones**:
+                     + Giai đoạn 1: Database Schema & Authentication / Security Encryption (AES-256)
+                     + Giai đoạn 2: Các Chức Năng Nghiệp Vụ Cốt Lõi (Order / Telehealth / EHR...)
+                     + Giai đoạn 3: Tích hợp Module Phụ Trợ (VNPAY IPN, Zalo ZNS / Email...)
+                     + Giai đoạn 4: Kiểm thử QA, Security Audit OWASP & Bàn giao UAT.
+                   - ❓ **Lời Mời Phê Duyệt**:
+                     "BẠN CÓ ĐỒNG Ý VỚI BẢN KẾ HOẠCH DEMO NÀY KHÔNG?\n👉 Nếu đồng ý, vui lòng phản hồi 'Chốt Task' hoặc 'Đồng ý kế hoạch' để AI khởi tạo Bảng Task chi tiết. Nếu cần thay đổi, bạn hãy phản hồi các yêu cầu điều chỉnh!"
+                2. Trả về `isDataSufficient`: false và `tasks`: [] RỖNG NGUYÊN BẢN.
+
                 YÊU CẦU ĐỊNH DẠNG STRICT JSON:
                 {
+                  "isDataSufficient": false,
+                  "suggestedSpaceName": "Tên dự án gợi ý",
+                  "summary": "Bản Kế Hoạch Demo Dự Án ngắn gọn chi tiết kèm link chứng thực và lời mời người dùng phê duyệt",
+                  "sourceReference": "%s",
+                  "sourceUrl": "%s",
+                  "tasks": []
+                }
+                """, ragSourceRef, ragSourceUrl);
+
+        } else {
+            // STAGE 3 (TURN 3+ OR EXPLICIT FINALIZE): Full Detailed WBS Task Generation
+            systemPrompt = String.format("""
+                Bạn là một Requirement Agent (Product Owner / Business Analyst) chuyên nghiệp cho hệ thống PROGA.
+                ĐÂY LÀ GIAI ĐOẠN PHÂN RÃ CHI TIẾT BẢNG TASK WBS (Người dùng đã xác nhận hoặc chốt kế hoạch).
+
+                CẢNH BÁO TỐI CAO VỀ BÀI TOÁN & QUY TRÌNH PHÂN RÃ:
+                1. BẮT BUỘC BÓC TÁCH TASK BAO QUÁT 100%% BÀI TOÁN CỐT LÕI BAN ĐẦU LẪN THÔNG TIN BỔ SUNG VÀ CÁC ĐIỀU CHỈNH TRONG LỊCH SỬ DÀM THOẠI.
+                2. BẮT BUỘC BÓC TÁCH ĐẦY ĐỦ VÒNG ĐỜI DỰ ÁN PHẦN MỀM THỰC TẾ THEO 4 GIAI ĐOẠN (DB/Auth -> Core -> Integrations -> QA/UAT).
+                3. QUY TẮC NỐI TIẾP DỰ ÁN ĐANG DIỄN RA: NẾU TRONG PROMPT NGƯỜI DÙNG CÓ GỬI DỮ LIỆU 'NGỮ CẢNH DỰ ÁN HIỆN TẠI' (Có Sprint N), BẠN BẮT BUỘC ĐẶT TÊN CÁC SPRINT MỚI TẠO RA LÀ "Sprint N+1", "Sprint N+2"... TUYỆT ĐỐI KHÔNG TRÙNG LẶP NỘI DUNG VỚI CÁC TASK ĐÃ CÓ.
+                4. ĐÁNH GIÁ RỦI RO THEO BẰNG CHỨNG BENCHMARK THỰC TẾ: Các cảnh báo rủi ro ('riskWarning') phải trích dẫn căn cứ thực tế (Ví dụ: Thông tư 46/2018/TT-BYT, Tiêu chuẩn NIST SP 800-38A mã hóa AES-256, Tiêu chuẩn HLS RFC 8216, OWASP Top 10).
+
+                ĐÂY LÀ MẪU RAG THAM KHẢO CẤU TRÚC (%s):
+                %s
+
+                YÊU CẦU ĐỊNH DẠNG STRICT JSON:
+                {
+                  "isDataSufficient": true,
                   "suggestedSpaceName": "Tên dự án gợi ý",
                   "summary": "Tóm tắt ngắn gọn việc bóc tách danh sách WBS Tasks dựa trên đàm thoại và các căn cứ tiêu chuẩn benchmark thực tế",
                   "sourceReference": "%s",
@@ -317,26 +390,28 @@ public class AiServiceImpl implements AiService {
             Map<String, Object> parsed = objectMapper.readValue(cleanedJson, new TypeReference<Map<String, Object>>() {});
             
             String summary = (String) parsed.getOrDefault("summary", "Đã phân rã yêu cầu thành công");
-            // Enforce verified RAG dataset source reference and URL to prevent LLM hallucinations
-            String respSourceRef = (matchedRagSample != null && matchedRagSample.containsKey("sourceReference")) 
-                    ? (String) matchedRagSample.get("sourceReference") 
+            Boolean isDataSufficient = (Boolean) parsed.getOrDefault("isDataSufficient", true);
+            if (isExplicitFinalize) {
+                isDataSufficient = true;
+            }
+            if (isClarificationStage || isDemoPlanStage) {
+                isDataSufficient = false;
+            }
+
+            // Enforce verified RAG dataset tri-anchor benchmark reference and URL
+            String respSourceRef = (matchedRagSample != null) 
+                    ? (String) matchedRagSample.getOrDefault("evidenceBenchmark", (String) matchedRagSample.getOrDefault("sourceReference", ragSourceRef)) 
                     : (String) parsed.getOrDefault("sourceReference", ragSourceRef);
-            String respSourceUrl = (matchedRagSample != null && matchedRagSample.containsKey("sourceUrl")) 
-                    ? (String) matchedRagSample.get("sourceUrl") 
+            String respSourceUrl = (matchedRagSample != null) 
+                    ? (String) matchedRagSample.getOrDefault("legalTechnicalUrl", (String) matchedRagSample.getOrDefault("sourceUrl", ragSourceUrl)) 
                     : (String) parsed.getOrDefault("sourceUrl", ragSourceUrl);
             List<TaskDecompositionResponse.DecomposedTaskItem> taskItems;
 
             String suggestedSpaceName = (String) parsed.get("suggestedSpaceName");
 
-            if (isClarificationMode) {
-                // CLARIFICATION PHASE: Strictly return empty tasks array!
+            if (!isDataSufficient) {
+                // CLARIFICATION OR DEMO PLAN STAGE: Strictly return empty tasks array!
                 taskItems = Collections.emptyList();
-                if (summary == null || summary.isBlank() || summary.contains("Đã phân rã")) {
-                    summary = String.format("Chào bạn! Tôi là Requirement Agent (PO/BA). Đây là lượt đàm thoại thứ %d/4. Để hỗ trợ bóc tách Bảng Task WBS chính xác nhất, tôi xin trao đổi 1-2 điểm đại khái sau:\n" +
-                              "1. Quy trình nghiệp vụ cốt lõi mà bạn muốn ưu tiên số 1 trong dự án là gì?\n" +
-                              "2. Đội ngũ của bạn có khoảng bao nhiêu thành viên và gồm những vai trò nào (ví dụ: Backend, Frontend, QA)?\n\n" +
-                              "👉 Bạn phản hồi thông tin trên (hoặc gõ 'Chốt task ngay') để tôi bắt đầu phân rã Bảng Task nhé!", userTurnCount);
-                }
             } else {
                 List<Map<String, Object>> tasksRaw = (List<Map<String, Object>>) parsed.getOrDefault("tasks", Collections.emptyList());
                 taskItems = tasksRaw.stream().map(t -> 
@@ -360,6 +435,7 @@ public class AiServiceImpl implements AiService {
                     .summary(summary)
                     .sourceReference(respSourceRef)
                     .sourceUrl(respSourceUrl)
+                    .sourceUrls(allCitationUrls)
                     .tasks(taskItems)
                     .build();
 
