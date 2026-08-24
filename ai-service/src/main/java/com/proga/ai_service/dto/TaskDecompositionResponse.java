@@ -15,6 +15,7 @@ public class TaskDecompositionResponse {
     private String summary;
     private String sourceReference;
     private String sourceUrl;
+    private List<String> sourceUrls;
     private List<DecomposedTaskItem> tasks;
 
     @Getter

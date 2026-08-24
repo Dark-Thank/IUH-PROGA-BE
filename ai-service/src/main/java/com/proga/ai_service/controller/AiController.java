@@ -16,6 +16,19 @@ import java.util.List;
 public class AiController {
 
     private final AiService aiService;
+    private final com.proga.ai_service.service.DocumentParserService documentParserService;
+
+    @PostMapping(value = "/parse-document", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<com.proga.ai_service.service.DocumentParserService.DocumentParseResponse>> parseDocument(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            com.proga.ai_service.service.DocumentParserService.DocumentParseResponse response = documentParserService.parseAndIngestDocument(file);
+            return ResponseEntity.ok(ApiResponse.success("Bóc tách tài liệu PDF/Docx thành công và đã nạp vào Vector Store", response));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(400, "Lỗi khi đọc file tài liệu: " + e.getMessage()));
+        }
+    }
 
     @PostMapping("/threads")
     public ResponseEntity<ApiResponse<AiThreadResponse>> getOrCreateThread(@Valid @RequestBody AiThreadRequest request) {
