@@ -2,6 +2,7 @@ package com.proga.workspace_service.service;
 
 import com.proga.workspace_service.dto.SpaceRequest;
 import com.proga.workspace_service.dto.SpaceResponse;
+import com.proga.workspace_service.model.SpaceMember;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,4 +14,6 @@ public interface SpaceService {
     List<SpaceResponse> getSpacesByWorkspace(long workspaceId, Long userId);
     SpaceResponse updateSpace(long id, SpaceRequest request);
     void deleteSpace(long id);
+    void addMemberToSpace(long spaceId, long userId, long roleId);
+    List<SpaceMember> getSpaceMembers(long spaceId);
 }

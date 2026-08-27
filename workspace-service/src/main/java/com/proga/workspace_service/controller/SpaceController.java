@@ -49,4 +49,19 @@ public class SpaceController {
         spaceService.deleteSpace(id);
         return ResponseEntity.ok(ApiResponse.success("Space deleted successfully", null));
     }
+
+    @PostMapping("/{id}/members")
+    public ResponseEntity<ApiResponse<Void>> addMemberToSpace(
+            @PathVariable long id,
+            @RequestParam long userId,
+            @RequestParam(defaultValue = "3") long roleId
+    ) {
+        spaceService.addMemberToSpace(id, userId, roleId);
+        return ResponseEntity.ok(ApiResponse.success("Member added to space successfully", null));
+    }
+
+    @GetMapping("/{id}/members")
+    public ResponseEntity<ApiResponse<List<com.proga.workspace_service.model.SpaceMember>>> getSpaceMembers(@PathVariable long id) {
+        return ResponseEntity.ok(ApiResponse.success(spaceService.getSpaceMembers(id)));
+    }
 }

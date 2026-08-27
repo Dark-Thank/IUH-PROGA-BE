@@ -121,6 +121,25 @@ public class SpaceServiceImpl implements SpaceService {
         spaceRepository.deleteById(id);
     }
 
+    @Override
+    public void addMemberToSpace(long spaceId, long userId, long roleId) {
+        Space space = spaceRepository.findById(spaceId)
+                .orElseThrow(() -> new RuntimeException("Space not found with id: " + spaceId));
+
+        com.proga.workspace_service.model.SpaceMemberId memberId = new com.proga.workspace_service.model.SpaceMemberId(spaceId, userId);
+        com.proga.workspace_service.model.SpaceMember member = com.proga.workspace_service.model.SpaceMember.builder()
+                .id(memberId)
+                .space(space)
+                .roleId(roleId)
+                .build();
+        spaceMemberRepository.save(member);
+    }
+
+    @Override
+    public List<com.proga.workspace_service.model.SpaceMember> getSpaceMembers(long spaceId) {
+        return spaceMemberRepository.findByIdSpaceId(spaceId);
+    }
+
     private SpaceResponse mapToResponse(Space space) {
         return SpaceResponse.builder()
                 .id(space.getId())

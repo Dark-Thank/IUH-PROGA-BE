@@ -189,12 +189,9 @@ public class AiServiceImpl implements AiService {
                 urls.add((String) matchedRagSample.get("sourceUrl"));
             }
         }
-        // Always include verified standard project management baseline citation URLs
+        // Always include baseline Scrum Guide & Agile Standards
         urls.add("https://scrumguides.org/scrum-guide.html");
         urls.add("https://www.agilealliance.org/agile101/");
-        urls.add("https://www.tempo.io/blog/jira-project-types");
-        urls.add("https://www.eclipse.org/projects/dev_process/");
-        urls.add("https://clickup.com/vi/blog/486277/jira-project-management-template");
 
         return new ArrayList<>(urls);
     }
@@ -318,13 +315,13 @@ public class AiServiceImpl implements AiService {
                 Nhiệm vụ của bạn:
                 1. Xây dựng BẢN KẾ HOẠCH DEMO DỰ ÁN ngắn gọn, chuyên nghiệp trình bày trong trường `summary` bao gồm:
                    - 📌 **Tên Dự Án Gợi Ý**
-                   - ⏱️ **Quy Mô Dự Kiến**: Số lượng Sprint (VD: 4 Sprints, ~6-8 tuần) & Phân bổ nhân sự (Backend, Frontend, QA, DevOps).
+                   - ⏱️ **Quy Mô Dự Kiến**: Số lượng Sprint (Mỗi Sprint mặc định 1 TUẦN/7 NGÀY, VD: 4 Sprints = 4 tuần) & Phân bổ nhân sự.
                    - 🔗 **Căn Cứ Benchmark & Các Link Chứng Thực Thực Tế**: Liệt kê các căn cứ tiêu chuẩn (Scrum Guide, IEEE Std 12207, Thông tư Bộ Y tế/NIST, Apache/Moodle Public Jira Trackers).
                    - 📋 **Tóm Tắt 4 Giai Đoạn WBS Milestones**:
-                     + Giai đoạn 1: Database Schema & Authentication / Security Encryption (AES-256)
-                     + Giai đoạn 2: Các Chức Năng Nghiệp Vụ Cốt Lõi (Order / Telehealth / EHR...)
-                     + Giai đoạn 3: Tích hợp Module Phụ Trợ (VNPAY IPN, Zalo ZNS / Email...)
-                     + Giai đoạn 4: Kiểm thử QA, Security Audit OWASP & Bàn giao UAT.
+                     + Sprint 1: Database Schema & Authentication / Security Encryption (AES-256)
+                     + Sprint 2: Các Chức Năng Nghiệp Vụ Cốt Lõi (Order / Telehealth / EHR...)
+                     + Sprint 3: Tích hợp Module Phụ Trợ (VNPAY IPN, Zalo ZNS / Email...)
+                     + Sprint 4: Kiểm thử QA, Security Audit OWASP & Bàn giao UAT.
                    - ❓ **Lời Mời Phê Duyệt**:
                      "BẠN CÓ ĐỒNG Ý VỚI BẢN KẾ HOẠCH DEMO NÀY KHÔNG?\n👉 Nếu đồng ý, vui lòng phản hồi 'Chốt Task' hoặc 'Đồng ý kế hoạch' để AI khởi tạo Bảng Task chi tiết. Nếu cần thay đổi, bạn hãy phản hồi các yêu cầu điều chỉnh!"
                 2. Trả về `isDataSufficient`: false và `tasks`: [] RỖNG NGUYÊN BẢN.
@@ -346,11 +343,23 @@ public class AiServiceImpl implements AiService {
                 Bạn là một Requirement Agent (Product Owner / Business Analyst) chuyên nghiệp cho hệ thống PROGA.
                 ĐÂY LÀ GIAI ĐOẠN PHÂN RÃ CHI TIẾT BẢNG TASK WBS (Người dùng đã xác nhận hoặc chốt kế hoạch).
 
-                CẢNH BÁO TỐI CAO VỀ BÀI TOÁN & QUY TRÌNH PHÂN RÃ:
-                1. BẮT BUỘC BÓC TÁCH TASK BAO QUÁT 100%% BÀI TOÁN CỐT LÕI BAN ĐẦU LẪN THÔNG TIN BỔ SUNG VÀ CÁC ĐIỀU CHỈNH TRONG LỊCH SỬ DÀM THOẠI.
-                2. BẮT BUỘC BÓC TÁCH ĐẦY ĐỦ VÒNG ĐỜI DỰ ÁN PHẦN MỀM THỰC TẾ THEO 4 GIAI ĐOẠN (DB/Auth -> Core -> Integrations -> QA/UAT).
-                3. QUY TẮC NỐI TIẾP DỰ ÁN ĐANG DIỄN RA: NẾU TRONG PROMPT NGƯỜI DÙNG CÓ GỬI DỮ LIỆU 'NGỮ CẢNH DỰ ÁN HIỆN TẠI' (Có Sprint N), BẠN BẮT BUỘC ĐẶT TÊN CÁC SPRINT MỚI TẠO RA LÀ "Sprint N+1", "Sprint N+2"... TUYỆT ĐỐI KHÔNG TRÙNG LẶP NỘI DUNG VỚI CÁC TASK ĐÃ CÓ.
-                4. ĐÁNH GIÁ RỦI RO THEO BẰNG CHỨNG BENCHMARK THỰC TẾ: Các cảnh báo rủi ro ('riskWarning') phải trích dẫn căn cứ thực tế (Ví dụ: Thông tư 46/2018/TT-BYT, Tiêu chuẩn NIST SP 800-38A mã hóa AES-256, Tiêu chuẩn HLS RFC 8216, OWASP Top 10).
+                CẢNH BÁO TỐI CAO VỀ BÀI TOÁN & QUY TRÌNH PHÂN RÃ CHI TIẾT:
+                1. BẮT BUỘC ĐỌC VÀ BÓC TÁCH TẤT CẢ CÁC THÔNG TIN TRONG DÀM THOẠI LẪN FILE KẾ HOẠCH NẠP VÀO (.pdf, .docx).
+                2. QUY TẮC ĐẶT TÊN SPRINT CÓ CHỦ ĐỀ NGHIỆP VỤ (BẮT BUỘC KÈM TÊN CHỦ ĐỀ):
+                   - Đặt tên Sprint dạng: "Sprint 1: CSDL Schema & Auth Microservices", "Sprint 2: Chức Năng Nghiệp Vụ Cốt Lõi", "Sprint 3: Tích Hợp Cổng Thanh Toán & Notify", "Sprint 4: QA, Security Audit OWASP & UAT".
+                   - Nếu nối tiếp dự án sẵn có, đặt tên: "Sprint N+1: [Tên chủ đề nghiệp vụ mở rộng]".
+                3. QUY TẮC THỜI GIAN SPRINT MẶC ĐỊNH MỖI SPRINT TỐI THIỂU 1 TUẦN (7 NGÀY):
+                   - Thời gian của 1 Sprint mặc định là 1 TUẦN (7 NGÀY) hoặc 2 TUẦN (14 NGÀY). TUYỆT ĐỐI KHÔNG ĐƯỢC MẶC ĐỊNH SPRINT DƯỚI 1 TUẦN (7 NGÀY).
+                4. QUY TẮC TRÍCH XUẤT CHÍNH XÁC NHÂN SỰ / THÀNH VIÊN DỰ ÁN (KHÔNG ĐƯỢC BỊA THÊM):
+                   - NẾU TÀI LIỆU CÓ NÊU TÊN CÁC THÀNH VIÊN (Ví dụ: "Nguyễn Văn A, Trần Thị B"): BẮT BUỘC chỉ gán đúng tên các thành viên đó vào `suggestedMemberName`. TUYỆT ĐỐI KHÔNG BỊA THÊM TÊN KHÁC.
+                   - NẾU TÀI LIỆU CHỈ NÊU SỐ LƯỢNG (Ví dụ: "Team 2 người"): Bạn BẮT BUỘC chỉ gán trường `suggestedMemberName` là "Thành viên 1", "Thành viên 2" (hoặc tên 2 vai trò gán cho 2 thành viên đó). TUYỆT ĐỐI KHÔNG TỰ BỊA RA 6-8 THÀNH VIÊN KHÁC.
+                5. QUY TẮC BẢO TOÀN DUNG LƯỢNG TASK VÀ ĐIỀU CHỈNH SỐ SPRINT THEO SỐ THÀNH VIÊN:
+                   - NẾU SỐ THÀNH VIÊN ÍT (Ví dụ: 2 người): TUYỆT ĐỐI KHÔNG ĐƯỢC CẮT BỚT TASK HOẶC GIẢM KHỐI LƯỢNG CÔNG VIỆC CỦA DỰ ÁN!
+                   - Tổng số Task và Scope bài toán là KHÔNG ĐỔI. Khi chỉ có 2 người làm, BẠN BẮT BUỘC PHẢI TĂNG SỐ SPRINT VÀ THỜI GIAN KÉO DÀI (Ví dụ: Phân bổ 6 - 8 Sprint thay vì 3 Sprint, thời gian kéo dài 6 - 8 tuần, mỗi Sprint 1 tuần) và gán 2 người đó đảm nhiệm xoay vòng các vai trò (Backend, Frontend, QA).
+                6. QUY TẮC CHIA NHỎ VÀ CHI TIẾT HÓA WBS TASK (FINE-GRAINED WBS TASKS):
+                   - Mỗi Task phải nhỏ, đơn lẻ, dễ quản lý (Thời gian ước tính từ 1 - 3 ngày/task). Không gom nhiều tính năng vào 1 task chung chung.
+                   - Bóc tách chi tiết từ 15 đến 30+ Tasks bao quát đầy đủ 4 giai đoạn vòng đời (DB/Auth -> Core Feature -> Integrations/Payments -> QA/UAT).
+                7. ĐÁNH GIÁ RỦI RO THEO BẰNG CHỨNG BENCHMARK THỰC TẾ: Các cảnh báo rủi ro ('riskWarning') phải trích dẫn căn cứ thực tế (Ví dụ: Thông tư 46/2018/TT-BYT, Tiêu chuẩn NIST SP 800-38A mã hóa AES-256, Tiêu chuẩn HLS RFC 8216, OWASP Top 10).
 
                 ĐÂY LÀ MẪU RAG THAM KHẢO CẤU TRÚC (%s):
                 %s
@@ -364,13 +373,14 @@ public class AiServiceImpl implements AiService {
                   "sourceUrl": "%s",
                   "tasks": [
                     {
-                      "sprint": "Sprint 1 (Hoặc Sprint N+1 nếu mở rộng Space có sẵn)",
+                      "sprint": "Sprint 1: CSDL Schema & Auth Microservices",
                       "title": "Tên task ngắn gọn rõ ràng",
                       "description": "Mô tả công việc chi tiết",
                       "priority": "HIGH / MEDIUM / LOW / URGENT",
                       "estimatedDays": 3,
                       "bufferDays": 1,
                       "assignedRole": "Backend Developer / Frontend Developer / QA Lead / DevOps / System Architect",
+                      "suggestedMemberName": "Tên thành viên chính xác trích xuất từ tài liệu/lời nhắn (hoặc Thành viên 1, Thành viên 2 nếu chỉ có số lượng)",
                       "riskWarning": "Cảnh báo rủi ro có căn cứ benchmark thực tế (Chỉ điền nếu URGENT/HIGH, để null nếu bình thường)"
                     }
                   ]
