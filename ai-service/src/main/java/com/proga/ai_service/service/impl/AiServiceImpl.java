@@ -222,12 +222,28 @@ public class AiServiceImpl implements AiService {
 
         // Fetch existing message history in this specific thread BEFORE saving current prompt
         List<AiChatMessage> existingMsgs = messageRepository.findByThreadIdOrderByCreatedAtAsc(thread.getId());
-        
+
+        // Check if thread already has decomposed tasks in previous assistant message (Preview Canvas State)
+        String lastAssistantTaskJson = "";
+        for (int i = existingMsgs.size() - 1; i >= 0; i--) {
+            AiChatMessage m = existingMsgs.get(i);
+            if (m.getSenderType() == SenderType.ASSISTANT && m.getJsonPayload() != null && m.getJsonPayload().trim().startsWith("[")) {
+                if (!m.getJsonPayload().trim().equals("[]")) {
+                    lastAssistantTaskJson = m.getJsonPayload().trim();
+                    break;
+                }
+            }
+        }
+        boolean hasExistingDecomposedTasks = !lastAssistantTaskJson.isEmpty();
+
         long userTurnCount = existingMsgs.stream().filter(m -> m.getSenderType() == SenderType.USER).count() + 1;
         String reqTextLower = request.getRequirementText().toLowerCase();
         boolean isExplicitFinalize = reqTextLower.contains("chốt task") || reqTextLower.contains("tạo task") 
                 || reqTextLower.contains("phân rã ngay") || reqTextLower.contains("bóc tách ngay") 
-                || reqTextLower.contains("khởi tạo ngay");
+                || reqTextLower.contains("khởi tạo ngay") || reqTextLower.contains("đồng ý")
+                || reqTextLower.contains("chốt kế hoạch") || reqTextLower.contains("duyệt kế hoạch")
+                || reqTextLower.contains("thống nhất") || reqTextLower.contains("ok kế hoạch")
+                || reqTextLower.contains("duyệt") || reqTextLower.contains("chốt");
 
         // Save User Prompt into Thread
         messageRepository.save(AiChatMessage.builder()
@@ -277,11 +293,57 @@ public class AiServiceImpl implements AiService {
         }
         historyBuilder.append("Người Dùng (Mới nhất): ").append(request.getRequirementText()).append("\n");
 
-        boolean isClarificationStage = userTurnCount == 1 && !isExplicitFinalize;
-        boolean isDemoPlanStage = userTurnCount == 2 && !isExplicitFinalize;
+        boolean isClarificationStage = !hasExistingDecomposedTasks && userTurnCount == 1 && !isExplicitFinalize;
+        boolean isDemoPlanStage = !hasExistingDecomposedTasks && !isClarificationStage && !isExplicitFinalize;
+        boolean isTaskModificationStage = hasExistingDecomposedTasks;
 
         String systemPrompt;
-        if (isClarificationStage) {
+        if (isTaskModificationStage) {
+            // STAGE 4: Direct Task Modification on Decomposed Tasks (PREVIEW CANVAS)
+            systemPrompt = String.format("""
+                Bạn là một Requirement Agent (Product Owner / Business Analyst Co-Pilot) chuyên nghiệp cho hệ thống PROGA.
+                CẢNH BÁO TỐI CAO: NGƯỜI DÙNG ĐANG XEM BẢNG TASK PREVIEW ĐÃ PHÂN RÃ TRÊN MÀN HÌNH (CHƯA NẠP VÀO SPACE DB).
+                
+                Danh sách Task Preview hiện tại:
+                %s
+
+                Yêu cầu điều chỉnh/bổ sung mới nhất của người dùng:
+                "%s"
+
+                Nhiệm vụ của bạn:
+                1. CHỈ THỰC HIỆN ĐIỀU CHỈNH TRỰC TIẾP TRÊN DANH SÁCH TASK PREVIEW HIỆN TẠI THEO ĐÚNG YÊU CẦU CỦA NGƯỜI DÙNG:
+                   - Thêm task mới nếu người dùng yêu cầu thêm.
+                   - Sửa đổi thông tin task (tên, mô tả, sprint, vai trò, người phụ trách, độ ưu tiên, rủi ro) nếu yêu cầu sửa.
+                   - Xóa task nếu yêu cầu xóa.
+                   - Đổi Sprint hoặc chuyển vị trí task theo đúng ý người dùng.
+                2. TUYỆT ĐỐI KHÔNG TỰ Ý PHÂN RÃ LẠI HOẶC TẠO MỚI TOÀN BỘ CÁC TASK TỪ ĐẦU! Tất cả các task không bị người dùng yêu cầu sửa phải giữ nguyên bản.
+                3. Trả về `isDataSufficient`: true và danh sách `tasks` đã được điều chỉnh.
+                4. Trình bày tóm tắt ngắn gọn thay đổi trong trường `summary`.
+
+                YÊU CẦU ĐỊNH DẠNG STRICT JSON:
+                {
+                  "isDataSufficient": true,
+                  "suggestedSpaceName": "Tên dự án gợi ý",
+                  "summary": "Tóm tắt ngắn gọn các điểm đã sửa đổi/bổ sung trên Bảng Task Preview theo yêu cầu của bạn",
+                  "sourceReference": "%s",
+                  "sourceUrl": "%s",
+                  "tasks": [
+                    {
+                      "sprint": "Tên Sprint",
+                      "title": "Tên task",
+                      "description": "Mô tả công việc",
+                      "priority": "HIGH / MEDIUM / LOW / URGENT",
+                      "estimatedDays": 3,
+                      "bufferDays": 1,
+                      "assignedRole": "Vai trò",
+                      "suggestedMemberName": "Tên người làm",
+                      "riskWarning": "Cảnh báo rủi ro (nếu có)"
+                    }
+                  ]
+                }
+                """, lastAssistantTaskJson, request.getRequirementText(), ragSourceRef, ragSourceUrl);
+
+        } else if (isClarificationStage) {
             // STAGE 1 (TURN 1): Mandatory Clarification Interview with Sample Answers
             systemPrompt = String.format("""
                 Bạn là một Requirement Agent (Product Owner / Business Analyst Co-Pilot) chuyên nghiệp cho hệ thống PROGA.
@@ -307,30 +369,31 @@ public class AiServiceImpl implements AiService {
                 """, ragSourceRef, ragSourceUrl);
 
         } else if (isDemoPlanStage) {
-            // STAGE 2 (TURN 2): Demo Plan Preview & Benchmark Citations for User Confirmation
+            // STAGE 2 (TURN 2+ UNTIL USER APPROVES): Demo Plan Q&A Loop
             systemPrompt = String.format("""
                 Bạn là một Requirement Agent (Product Owner / Business Analyst Co-Pilot) chuyên nghiệp cho hệ thống PROGA.
-                ĐÂY LÀ LƯỢT ĐÀM THOẠI LẦN THỨ 2 (Giai đoạn Đưa ra Bản Kế Hoạch Demo & Link Chứng Thực Thực Tế Để Người Dùng Phê Duyệt).
+                ĐÂY LÀ GIAI ĐOẠN ĐÀM THOẠI HỎI ĐÁP VÀ ĐƯA RA BẢN KẾ HOẠCH DEMO DỰ ÁN CHO ĐẾN KHU NGƯỜI DÙNG ĐỒNG Ý.
+
+                QUY TẮC LINH HOẠT VỀ SPRINT VÀ PHÂN BỔ NHÂN SỰ:
+                - KHÔNG BẮT BUỘC LÚC NHÀO CŨNG LÀ 4 SPRINT THEO 4 PHẦN CỦA VÒNG ĐỜI DỰ ÁN!
+                - Tùy vào độ phức tạp của bài toán và số lượng thành viên thực hiện (đặc biệt khi ít người, ví dụ 1-2 người), một phần nghiệp vụ có thể kéo dài qua NỀU SPRINT (VD: Sprint 2, Sprint 3, Sprint 4 cho Chức năng cốt lõi).
+                - Tổng số Sprint có thể linh hoạt (5, 6, 8 Sprints...) đảm bảo phân bổ khối lượng vừa sức với đội ngũ.
 
                 Nhiệm vụ của bạn:
-                1. Xây dựng BẢN KẾ HOẠCH DEMO DỰ ÁN ngắn gọn, chuyên nghiệp trình bày trong trường `summary` bao gồm:
+                1. Dựa trên cuộc đàm thoại và phản hồi mới nhất của người dùng, cập nhật/xây dựng BẢN KẾ HOẠCH DEMO DỰ ÁN trình bày trong trường `summary` bao gồm:
                    - 📌 **Tên Dự Án Gợi Ý**
-                   - ⏱️ **Quy Mô Dự Kiến**: Số lượng Sprint (Mỗi Sprint mặc định 1 TUẦN/7 NGÀY, VD: 4 Sprints = 4 tuần) & Phân bổ nhân sự.
-                   - 🔗 **Căn Cứ Benchmark & Các Link Chứng Thực Thực Tế**: Liệt kê các căn cứ tiêu chuẩn (Scrum Guide, IEEE Std 12207, Thông tư Bộ Y tế/NIST, Apache/Moodle Public Jira Trackers).
-                   - 📋 **Tóm Tắt 4 Giai Đoạn WBS Milestones**:
-                     + Sprint 1: Database Schema & Authentication / Security Encryption (AES-256)
-                     + Sprint 2: Các Chức Năng Nghiệp Vụ Cốt Lõi (Order / Telehealth / EHR...)
-                     + Sprint 3: Tích hợp Module Phụ Trợ (VNPAY IPN, Zalo ZNS / Email...)
-                     + Sprint 4: Kiểm thử QA, Security Audit OWASP & Bàn giao UAT.
+                   - ⏱️ **Quy Mô Dự Kiến**: Số lượng Sprint (Mỗi Sprint 1 TUẦN, tổng số Sprint điều chỉnh linh hoạt theo nhân sự & độ phức tạp) & Phân bổ nhân sự.
+                   - 🔗 **Căn Cứ Benchmark & Các Link Chứng Thực Thực Tế**: Liệt kê các tiêu chuẩn (Scrum Guide, IEEE Std 12207, Thông tư Bộ Y tế/NIST, Apache/Moodle Public Jira Trackers).
+                   - 📋 **Tóm Tắt Các Sprint & Milestone Nghiệp Vụ** (Phân bổ linh hoạt theo số thành viên).
                    - ❓ **Lời Mời Phê Duyệt**:
-                     "BẠN CÓ ĐỒNG Ý VỚI BẢN KẾ HOẠCH DEMO NÀY KHÔNG?\n👉 Nếu đồng ý, vui lòng phản hồi 'Chốt Task' hoặc 'Đồng ý kế hoạch' để AI khởi tạo Bảng Task chi tiết. Nếu cần thay đổi, bạn hãy phản hồi các yêu cầu điều chỉnh!"
+                     "BẠN CÓ ĐỒNG Ý VỚI BẢN KẾ HOẠCH DEMO NÀY KHÔNG?\n👉 Nếu đồng ý, vui lòng phản hồi 'Chốt Task' hoặc 'Đồng ý kế hoạch' để AI khởi tạo Bảng Task chi tiết. Nếu cần thay đổi (ví dụ điều chỉnh thời gian, nhân sự, số Sprint), bạn hãy phản hồi các yêu cầu điều chỉnh!"
                 2. Trả về `isDataSufficient`: false và `tasks`: [] RỖNG NGUYÊN BẢN.
 
                 YÊU CẦU ĐỊNH DẠNG STRICT JSON:
                 {
                   "isDataSufficient": false,
                   "suggestedSpaceName": "Tên dự án gợi ý",
-                  "summary": "Bản Kế Hoạch Demo Dự Án ngắn gọn chi tiết kèm link chứng thực và lời mời người dùng phê duyệt",
+                  "summary": "Bản Kế Hoạch Demo Dự Án cập nhật ngắn gọn kèm link chứng thực và lời mời người dùng phê duyệt",
                   "sourceReference": "%s",
                   "sourceUrl": "%s",
                   "tasks": []
@@ -338,28 +401,29 @@ public class AiServiceImpl implements AiService {
                 """, ragSourceRef, ragSourceUrl);
 
         } else {
-            // STAGE 3 (TURN 3+ OR EXPLICIT FINALIZE): Full Detailed WBS Task Generation
+            // STAGE 3 (EXPLICIT USER APPROVAL): Full Detailed WBS Task Generation
             systemPrompt = String.format("""
                 Bạn là một Requirement Agent (Product Owner / Business Analyst) chuyên nghiệp cho hệ thống PROGA.
-                ĐÂY LÀ GIAI ĐOẠN PHÂN RÃ CHI TIẾT BẢNG TASK WBS (Người dùng đã xác nhận hoặc chốt kế hoạch).
+                ĐÂY LÀ GIAI ĐOẠN PHÂN RÃ CHI TIẾT BẢNG TASK WBS (Người dùng đã chốt/đồng ý kế hoạch demo).
 
                 CẢNH BÁO TỐI CAO VỀ BÀI TOÁN & QUY TRÌNH PHÂN RÃ CHI TIẾT:
-                1. BẮT BUỘC ĐỌC VÀ BÓC TÁCH TẤT CẢ CÁC THÔNG TIN TRONG DÀM THOẠI LẪN FILE KẾ HOẠCH NẠP VÀO (.pdf, .docx).
-                2. QUY TẮC ĐẶT TÊN SPRINT CÓ CHỦ ĐỀ NGHIỆP VỤ (BẮT BUỘC KÈM TÊN CHỦ ĐỀ):
-                   - Đặt tên Sprint dạng: "Sprint 1: CSDL Schema & Auth Microservices", "Sprint 2: Chức Năng Nghiệp Vụ Cốt Lõi", "Sprint 3: Tích Hợp Cổng Thanh Toán & Notify", "Sprint 4: QA, Security Audit OWASP & UAT".
-                   - Nếu nối tiếp dự án sẵn có, đặt tên: "Sprint N+1: [Tên chủ đề nghiệp vụ mở rộng]".
+                1. BẮT BUỘC ĐỌC VÀ BÓC TÁCH TẤT CẢ CÁC THÔNG TIN TRONG ĐÀM THOẠI LẪN FILE KẾ HOẠCH NẠP VÀO (.pdf, .docx).
+                2. QUY TẮC LINH HOẠT VỀ SPRINT VÀ CHỦ ĐỀ NGHIỆP VỤ:
+                   - KHÔNG KHÓA CỨNG 4 SPRINT! Cần linh hoạt phân bổ số Sprint (4, 5, 6, 8+ Sprint) tùy theo độ phức tạp bài toán và số lượng người làm.
+                   - Nếu team ít người (1-2 người), một phần nghiệp vụ cốt lõi có thể kéo dài qua nhiều Sprint (VD: Sprint 2, Sprint 3, Sprint 4...).
+                   - Đặt tên Sprint kèm chủ đề nghiệp vụ dạng: "Sprint 1: CSDL Schema & Auth Microservices", "Sprint 2: Chức Năng Nghiệp Vụ Cốt Lõi (Phần 1)", "Sprint 3: Chức Năng Nghiệp Vụ Cốt Lõi (Phần 2)...".
                 3. QUY TẮC THỜI GIAN SPRINT MẶC ĐỊNH MỖI SPRINT TỐI THIỂU 1 TUẦN (7 NGÀY):
-                   - Thời gian của 1 Sprint mặc định là 1 TUẦN (7 NGÀY) hoặc 2 TUẦN (14 NGÀY). TUYỆT ĐỐI KHÔNG ĐƯỢC MẶC ĐỊNH SPRINT DƯỚI 1 TUẦN (7 NGÀY).
-                4. QUY TẮC TRÍCH XUẤT CHÍNH XÁC NHÂN SỰ / THÀNH VIÊN DỰ ÁN (KHÔNG ĐƯỢC BỊA THÊM):
+                   - Thời gian 1 Sprint mặc định là 1 TUẦN (7 NGÀY) hoặc 2 TUẦN (14 NGÀY). TUYỆT ĐỐI KHÔNG ĐƯỢC MẶC ĐỊNH SPRINT DƯỚI 1 TUẦN.
+                4. QUY TẮC TRÍCH XUẤT CHÍNH XÁC NHÂN SỰ / THÀNH VIÊN DỰ ÁN (KHÔNG BỊA THÊM):
                    - NẾU TÀI LIỆU CÓ NÊU TÊN CÁC THÀNH VIÊN (Ví dụ: "Nguyễn Văn A, Trần Thị B"): BẮT BUỘC chỉ gán đúng tên các thành viên đó vào `suggestedMemberName`. TUYỆT ĐỐI KHÔNG BỊA THÊM TÊN KHÁC.
-                   - NẾU TÀI LIỆU CHỈ NÊU SỐ LƯỢNG (Ví dụ: "Team 2 người"): Bạn BẮT BUỘC chỉ gán trường `suggestedMemberName` là "Thành viên 1", "Thành viên 2" (hoặc tên 2 vai trò gán cho 2 thành viên đó). TUYỆT ĐỐI KHÔNG TỰ BỊA RA 6-8 THÀNH VIÊN KHÁC.
+                   - NẾU TÀI LIỆU CHỈ NÊU SỐ LƯỢNG (Ví dụ: "Team 2 người"): Bạn BẮT BUỘC chỉ gán `suggestedMemberName` là "Thành viên 1", "Thành viên 2" (hoặc vai trò gán cho 2 thành viên đó).
                 5. QUY TẮC BẢO TOÀN DUNG LƯỢNG TASK VÀ ĐIỀU CHỈNH SỐ SPRINT THEO SỐ THÀNH VIÊN:
                    - NẾU SỐ THÀNH VIÊN ÍT (Ví dụ: 2 người): TUYỆT ĐỐI KHÔNG ĐƯỢC CẮT BỚT TASK HOẶC GIẢM KHỐI LƯỢNG CÔNG VIỆC CỦA DỰ ÁN!
-                   - Tổng số Task và Scope bài toán là KHÔNG ĐỔI. Khi chỉ có 2 người làm, BẠN BẮT BUỘC PHẢI TĂNG SỐ SPRINT VÀ THỜI GIAN KÉO DÀI (Ví dụ: Phân bổ 6 - 8 Sprint thay vì 3 Sprint, thời gian kéo dài 6 - 8 tuần, mỗi Sprint 1 tuần) và gán 2 người đó đảm nhiệm xoay vòng các vai trò (Backend, Frontend, QA).
-                6. QUY TẮC CHIA NHỎ VÀ CHI TIẾT HÓA WBS TASK (FINE-GRAINED WBS TASKS):
-                   - Mỗi Task phải nhỏ, đơn lẻ, dễ quản lý (Thời gian ước tính từ 1 - 3 ngày/task). Không gom nhiều tính năng vào 1 task chung chung.
-                   - Bóc tách chi tiết từ 15 đến 30+ Tasks bao quát đầy đủ 4 giai đoạn vòng đời (DB/Auth -> Core Feature -> Integrations/Payments -> QA/UAT).
-                7. ĐÁNH GIÁ RỦI RO THEO BẰNG CHỨNG BENCHMARK THỰC TẾ: Các cảnh báo rủi ro ('riskWarning') phải trích dẫn căn cứ thực tế (Ví dụ: Thông tư 46/2018/TT-BYT, Tiêu chuẩn NIST SP 800-38A mã hóa AES-256, Tiêu chuẩn HLS RFC 8216, OWASP Top 10).
+                   - Tổng số Task và Scope bài toán là KHÔNG ĐỔI. Khi chỉ có 2 người làm, BẠN BẮT BUỘC PHẢI TĂNG SỐ SPRINT VÀ THỜI GIAN KÉO DÀI (Ví dụ: Phân bổ 6 - 8 Sprint thay vì 3 Sprint) và gán 2 người đó đảm nhiệm xoay vòng các vai trò (Backend, Frontend, QA).
+                6. QUY TẮC CHIA NHỎ VÀ CHI TIẾT HÓA WBS TASK:
+                   - Mỗi Task phải nhỏ, đơn lẻ, dễ quản lý (Thời gian ước tính từ 1 - 3 ngày/task).
+                   - Bóc tách chi tiết từ 15 đến 30+ Tasks bao quát đầy đủ các giai đoạn vòng đời.
+                7. ĐÁNH GIÁ RỦI RO THEO BẰNG CHỨNG BENCHMARK THỰC TẾ: Các cảnh báo rủi ro ('riskWarning') phải trích dẫn căn cứ thực tế (Ví dụ: Thông tư 46/2018/TT-BYT, Tiêu chuẩn NIST SP 800-38A, Tiêu chuẩn HLS RFC 8216, OWASP Top 10).
 
                 ĐÂY LÀ MẪU RAG THAM KHẢO CẤU TRÚC (%s):
                 %s
