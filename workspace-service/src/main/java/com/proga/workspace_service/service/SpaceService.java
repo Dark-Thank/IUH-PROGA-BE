@@ -15,5 +15,6 @@ public interface SpaceService {
     SpaceResponse updateSpace(long id, SpaceRequest request);
     void deleteSpace(long id);
     void addMemberToSpace(long spaceId, long userId, long roleId);
+    void removeMemberFromSpace(long spaceId, long userId);
     List<SpaceMember> getSpaceMembers(long spaceId);
 }

@@ -11,6 +11,7 @@ import com.proga.workspace_service.repository.SprintRepository;
 import com.proga.workspace_service.repository.WorkspaceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -133,6 +134,15 @@ public class SpaceServiceImpl implements SpaceService {
                 .roleId(roleId)
                 .build();
         spaceMemberRepository.save(member);
+    }
+
+    @Override
+    @Transactional
+    public void removeMemberFromSpace(long spaceId, long userId) {
+        com.proga.workspace_service.model.SpaceMemberId memberId = new com.proga.workspace_service.model.SpaceMemberId(spaceId, userId);
+        if (spaceMemberRepository.existsById(memberId)) {
+            spaceMemberRepository.deleteById(memberId);
+        }
     }
 
     @Override
