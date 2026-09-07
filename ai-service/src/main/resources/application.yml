@@ -4,15 +4,32 @@ server:
 spring:
   application:
     name: ai-service
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
   autoconfigure:
     exclude:
       - org.springframework.ai.autoconfigure.vectorstore.azure.AzureVectorStoreAutoConfiguration
   ai:
     openai:
-      api-key: ${GEMINI_API_KEY:${OPENAI_API_KEY:demo_key_proga_ai}}
+      base-url: https://generativelanguage.googleapis.com/v1beta/openai/
+      api-key: ${GEMINI_API_KEY}
+      headers:
+        x-goog-api-key: ${GEMINI_API_KEY}
       chat:
         options:
-          model: gpt-4o-mini
+          model: gemini-3.6-flash
+      embedding:
+        options:
+          model: text-embedding-3-small
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE
+        dimensions: 1536
+        initialize-schema: true
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/proga_ai_db}
     username: ${DB_USERNAME:postgres}

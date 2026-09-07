@@ -11,6 +11,7 @@ import com.proga.workspace_service.repository.SprintRepository;
 import com.proga.workspace_service.repository.WorkspaceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -119,6 +120,34 @@ public class SpaceServiceImpl implements SpaceService {
             throw new RuntimeException("Space not found with id: " + id);
         }
         spaceRepository.deleteById(id);
+    }
+
+    @Override
+    public void addMemberToSpace(long spaceId, long userId, long roleId) {
+        Space space = spaceRepository.findById(spaceId)
+                .orElseThrow(() -> new RuntimeException("Space not found with id: " + spaceId));
+
+        com.proga.workspace_service.model.SpaceMemberId memberId = new com.proga.workspace_service.model.SpaceMemberId(spaceId, userId);
+        com.proga.workspace_service.model.SpaceMember member = com.proga.workspace_service.model.SpaceMember.builder()
+                .id(memberId)
+                .space(space)
+                .roleId(roleId)
+                .build();
+        spaceMemberRepository.save(member);
+    }
+
+    @Override
+    @Transactional
+    public void removeMemberFromSpace(long spaceId, long userId) {
+        com.proga.workspace_service.model.SpaceMemberId memberId = new com.proga.workspace_service.model.SpaceMemberId(spaceId, userId);
+        if (spaceMemberRepository.existsById(memberId)) {
+            spaceMemberRepository.deleteById(memberId);
+        }
+    }
+
+    @Override
+    public List<com.proga.workspace_service.model.SpaceMember> getSpaceMembers(long spaceId) {
+        return spaceMemberRepository.findByIdSpaceId(spaceId);
     }
 
     private SpaceResponse mapToResponse(Space space) {

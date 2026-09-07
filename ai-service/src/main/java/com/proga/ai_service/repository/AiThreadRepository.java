@@ -13,5 +13,9 @@ public interface AiThreadRepository extends JpaRepository<AiThread, Long> {
 
     Optional<AiThread> findBySpaceIdAndAgentType(long spaceId, AgentType agentType);
 
+    Optional<AiThread> findBySpaceIdAndUserIdAndAgentType(long spaceId, long userId, AgentType agentType);
+
     List<AiThread> findBySpaceId(long spaceId);
+
+    List<AiThread> findBySpaceIdAndUserId(long spaceId, long userId);
 }
