@@ -716,7 +716,7 @@ public class AiServiceImpl implements AiService {
                 ));
                 return chatModel.call(prompt).getResult().getOutput().getText();
             } catch (Exception e) {
-                log.error("Call to Spring AI ChatModel failed: {}. Falling back to default response generator.", e.getMessage());
+                log.error("Call to Spring AI ChatModel failed with exception details: ", e);
             }
         }
 
