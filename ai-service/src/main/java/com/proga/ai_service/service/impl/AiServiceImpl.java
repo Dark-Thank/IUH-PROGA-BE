@@ -226,16 +226,23 @@ public class AiServiceImpl implements AiService {
         // prompt
         List<AiChatMessage> existingMsgs = messageRepository.findByThreadIdOrderByCreatedAtAsc(thread.getId());
 
-        // Check if thread already has decomposed tasks in previous assistant message
+        // Check if thread already has decomposed tasks in previous assistant message or user-provided live WBS canvas
         // (Preview Canvas State)
         String lastAssistantTaskJson = "";
-        for (int i = existingMsgs.size() - 1; i >= 0; i--) {
-            AiChatMessage m = existingMsgs.get(i);
-            if (m.getSenderType() == SenderType.ASSISTANT && m.getJsonPayload() != null
-                    && m.getJsonPayload().trim().startsWith("[")) {
-                if (!m.getJsonPayload().trim().equals("[]")) {
-                    lastAssistantTaskJson = m.getJsonPayload().trim();
-                    break;
+        if (request.getCurrentTasksJson() != null && !request.getCurrentTasksJson().trim().isEmpty()
+                && request.getCurrentTasksJson().trim().startsWith("[")) {
+            // PRIORITY 1: User explicitly provided the live drag-and-drop / edited WBS canvas state!
+            lastAssistantTaskJson = request.getCurrentTasksJson().trim();
+        } else {
+            // Fallback to database history
+            for (int i = existingMsgs.size() - 1; i >= 0; i--) {
+                AiChatMessage m = existingMsgs.get(i);
+                if (m.getSenderType() == SenderType.ASSISTANT && m.getJsonPayload() != null
+                        && m.getJsonPayload().trim().startsWith("[")) {
+                    if (!m.getJsonPayload().trim().equals("[]")) {
+                        lastAssistantTaskJson = m.getJsonPayload().trim();
+                        break;
+                    }
                 }
             }
         }
@@ -328,7 +335,8 @@ public class AiServiceImpl implements AiService {
                                - Sửa đổi thông tin task (tên, mô tả, sprint, vai trò, người phụ trách, độ ưu tiên, rủi ro) nếu yêu cầu sửa.
                                - Xóa task nếu yêu cầu xóa.
                                - Đổi Sprint hoặc chuyển vị trí task theo đúng ý người dùng.
-                            2. TUYỆT ĐỐI KHÔNG TỰ Ý PHÂN RÃ LẠI HOẶC TẠO MỚI TOÀN BỘ CÁC TASK TỪ ĐẦU! Tất cả các task không bị người dùng yêu cầu sửa phải giữ nguyên bản.
+                               - CẢNH BÁO QUAN TRỌNG: Người dùng có thể đã kéo thả / di chuyển các task sang Sprint khác trong "Danh sách Task Preview hiện tại" ở trên. Bạn BẮT BUỘC giữ nguyên trường `sprint` hiện tại của từng task trong danh sách trên! TUYỆT ĐỐI KHÔNG chuyển task về Sprint cũ trừ khi người dùng có yêu cầu rõ ràng.
+                            2. TUYỆT ĐỐI KHÔNG TỰ Ý PHÂN RÃ LẠI HOẶC TẠO MỚI TOÀN BỘ CÁC TASK TỪ ĐẦU! Tất cả các task không bị người dùng yêu cầu sửa phải giữ nguyên bản cả về nội dung và Sprint.
                             3. Trả về `isDataSufficient`: true và danh sách `tasks` đã được điều chỉnh.
                             4. Trình bày tóm tắt ngắn gọn thay đổi trong trường `summary`.
 
