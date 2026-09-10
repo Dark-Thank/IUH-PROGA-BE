@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/tasks")
@@ -47,13 +46,15 @@ public class TaskController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<TaskResponse>> updateTask(@PathVariable long id, @Valid @RequestBody TaskRequest request) {
+    public ResponseEntity<ApiResponse<TaskResponse>> updateTask(@PathVariable long id,
+            @Valid @RequestBody TaskRequest request) {
         TaskResponse response = taskService.updateTask(id, request);
         return ResponseEntity.ok(ApiResponse.success("Task updated successfully", response));
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<ApiResponse<TaskResponse>> updateTaskStatus(@PathVariable long id, @RequestParam TaskStatus status) {
+    public ResponseEntity<ApiResponse<TaskResponse>> updateTaskStatus(@PathVariable long id,
+            @RequestParam TaskStatus status) {
         TaskResponse response = taskService.updateTaskStatus(id, status);
         return ResponseEntity.ok(ApiResponse.success("Task status updated successfully", response));
     }

@@ -9,7 +9,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
@@ -32,8 +31,7 @@ public class CustomUserDetails implements UserDetails {
                 user.getEmail(),
                 user.getPassword(),
                 user.getIsAdmin(),
-                Collections.singletonList(authority)
-        );
+                Collections.singletonList(authority));
     }
 
     @Override

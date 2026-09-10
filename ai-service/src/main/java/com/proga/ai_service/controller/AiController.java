@@ -1,7 +1,6 @@
 package com.proga.ai_service.controller;
 
 import com.proga.ai_service.dto.*;
-import com.proga.ai_service.model.AgentType;
 import com.proga.ai_service.service.AiService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +21,10 @@ public class AiController {
     public ResponseEntity<ApiResponse<com.proga.ai_service.service.DocumentParserService.DocumentParseResponse>> parseDocument(
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         try {
-            com.proga.ai_service.service.DocumentParserService.DocumentParseResponse response = documentParserService.parseAndIngestDocument(file);
-            return ResponseEntity.ok(ApiResponse.success("Bóc tách tài liệu PDF/Docx thành công và đã nạp vào Vector Store", response));
+            com.proga.ai_service.service.DocumentParserService.DocumentParseResponse response = documentParserService
+                    .parseAndIngestDocument(file);
+            return ResponseEntity.ok(
+                    ApiResponse.success("Bóc tách tài liệu PDF/Docx thành công và đã nạp vào Vector Store", response));
         } catch (Exception e) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(400, "Lỗi khi đọc file tài liệu: " + e.getMessage()));
@@ -31,7 +32,8 @@ public class AiController {
     }
 
     @PostMapping("/threads")
-    public ResponseEntity<ApiResponse<AiThreadResponse>> getOrCreateThread(@Valid @RequestBody AiThreadRequest request) {
+    public ResponseEntity<ApiResponse<AiThreadResponse>> getOrCreateThread(
+            @Valid @RequestBody AiThreadRequest request) {
         AiThreadResponse response = aiService.getOrCreateThread(request.getSpaceId(), request.getAgentType());
         return ResponseEntity.ok(ApiResponse.success("AI Thread retrieved/created successfully", response));
     }
@@ -55,7 +57,8 @@ public class AiController {
     }
 
     @PostMapping("/agents/decompose")
-    public ResponseEntity<ApiResponse<TaskDecompositionResponse>> decomposeRequirements(@Valid @RequestBody TaskDecompositionRequest request) {
+    public ResponseEntity<ApiResponse<TaskDecompositionResponse>> decomposeRequirements(
+            @Valid @RequestBody TaskDecompositionRequest request) {
         TaskDecompositionResponse response = aiService.decomposeRequirements(request);
         return ResponseEntity.ok(ApiResponse.success("Requirements decomposed into tasks successfully", response));
     }

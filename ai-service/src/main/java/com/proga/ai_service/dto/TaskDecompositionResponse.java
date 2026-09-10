@@ -16,7 +16,21 @@ public class TaskDecompositionResponse {
     private String sourceReference;
     private String sourceUrl;
     private List<String> sourceUrls;
+    private List<RagCitationItem> citations;
     private List<DecomposedTaskItem> tasks;
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class RagCitationItem {
+        private String anchorCategory; // e.g. "Tiêu chuẩn IEEE 12207", "Quy chuẩn OWASP Top 10", "Chuẩn Scrum Guide 2020", "Mẫu Gantt Chart Benchmark"
+        private String title;
+        private String sourceUrl;
+        private String snippet;
+        private String priorityLevel; // "RẤT CAO", "CAO", "TRUNG BÌNH"
+    }
 
     @Getter
     @Setter
