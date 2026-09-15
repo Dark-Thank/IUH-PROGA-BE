@@ -76,4 +76,17 @@ public class AiController {
         AiChatMessageResponse response = aiService.getTechnicalAdvice(taskId, problemDescription);
         return ResponseEntity.ok(ApiResponse.success("Technical advice generated successfully", response));
     }
+
+    @PostMapping("/knowledge/harvest")
+    public ResponseEntity<ApiResponse<Void>> harvestKnowledge(
+            @Valid @RequestBody KnowledgeHarvestRequest request) {
+        aiService.harvestKnowledge(request);
+        return ResponseEntity.ok(ApiResponse.success("Knowledge harvested successfully", null));
+    }
+
+    @GetMapping("/knowledge/samples")
+    public ResponseEntity<ApiResponse<List<com.proga.ai_service.model.AiKnowledgeSample>>> getHarvestedSamples() {
+        List<com.proga.ai_service.model.AiKnowledgeSample> samples = aiService.getHarvestedSamples();
+        return ResponseEntity.ok(ApiResponse.success(samples));
+    }
 }
