@@ -3,11 +3,8 @@ package com.proga.workspace_service.service;
 import com.proga.workspace_service.dto.SpaceRequest;
 import com.proga.workspace_service.dto.SpaceResponse;
 import com.proga.workspace_service.model.Space;
-import com.proga.workspace_service.model.Sprint;
-import com.proga.workspace_service.model.SprintStatus;
 import com.proga.workspace_service.repository.SpaceMemberRepository;
 import com.proga.workspace_service.repository.SpaceRepository;
-import com.proga.workspace_service.repository.SprintRepository;
 import com.proga.workspace_service.repository.WorkspaceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,7 +18,6 @@ import java.util.stream.Collectors;
 public class SpaceServiceImpl implements SpaceService {
 
     private final SpaceRepository spaceRepository;
-    private final SprintRepository sprintRepository;
     private final SpaceMemberRepository spaceMemberRepository;
     private final WorkspaceRepository workspaceRepository;
 
@@ -40,17 +36,6 @@ public class SpaceServiceImpl implements SpaceService {
                 .build();
 
         Space saved = spaceRepository.save(space);
-
-        // Mặc định tự tạo 1 Sprint 0 (Kickoff & Setup) cho Space mới để không bao giờ bị trùng với Sprint 1 của AI
-        Sprint defaultSprint = Sprint.builder()
-                .spaceId(saved.getId())
-                .name("Sprint 0: Kickoff & Setup")
-                .goal("Sprint khởi tạo môi trường & lên kế hoạch cho Space " + saved.getName())
-                .status(SprintStatus.ACTIVE)
-                .startDate(saved.getStartDate())
-                .endDate(saved.getEndDate())
-                .build();
-        sprintRepository.save(defaultSprint);
 
         return mapToResponse(saved);
     }

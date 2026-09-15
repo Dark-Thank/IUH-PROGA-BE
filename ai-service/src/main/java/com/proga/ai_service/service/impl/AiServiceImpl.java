@@ -26,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import com.proga.ai_service.model.AiKnowledgeSample;
+import com.proga.ai_service.repository.AiKnowledgeSampleRepository;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -38,6 +40,7 @@ public class AiServiceImpl implements AiService {
     private final WorkspaceClient workspaceClient;
     private final ObjectMapper objectMapper;
     private final VectorStoreService vectorStoreService;
+    private final AiKnowledgeSampleRepository knowledgeSampleRepository;
 
     @Autowired(required = false)
     private ChatModel chatModel;
@@ -137,8 +140,6 @@ public class AiServiceImpl implements AiService {
     }
 
     private Map<String, Object> findBestMatchingRagSample(String userRequirement) {
-        if (ragSamples.isEmpty())
-            return null;
         if (userRequirement == null || userRequirement.isBlank())
             return null;
 
@@ -146,6 +147,51 @@ public class AiServiceImpl implements AiService {
         Map<String, Object> bestSample = null;
         int maxScore = 0;
 
+        // 1. Dynamic Knowledge Search from previously harvested Spaces
+        try {
+            List<AiKnowledgeSample> harvestedList = knowledgeSampleRepository.findAllByOrderByCreatedAtDesc();
+            for (AiKnowledgeSample hs : harvestedList) {
+                String domain = hs.getDomain() != null ? hs.getDomain() : "";
+                String title = hs.getTitle() != null ? hs.getTitle() : "";
+                String reqText = hs.getRequirementText() != null ? hs.getRequirementText() : "";
+                String combinedText = (domain + " " + title + " " + reqText).toLowerCase();
+
+                int score = 0;
+                String[] keywords = reqLower.split("\\s+");
+                for (String kw : keywords) {
+                    if (kw.length() > 2 && combinedText.contains(kw)) {
+                        score += 2; // Extra weight for matching user-harvested spaces
+                    }
+                }
+
+                if (score > maxScore && score >= 2) {
+                    maxScore = score;
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", "harvested-" + hs.getId());
+                    map.put("domain", hs.getDomain());
+                    map.put("title", hs.getTitle());
+                    map.put("requirementText", hs.getRequirementText());
+                    map.put("summary", hs.getSummary());
+                    map.put("isHarvestedSpace", true);
+                    map.put("evidenceBenchmark", "Tri Thức Tự Học Từ Dự Án Thực Tế Đã Triển Khai: " + hs.getTitle());
+                    try {
+                        if (hs.getTasksJson() != null && !hs.getTasksJson().isBlank()) {
+                            List<Map<String, Object>> parsedTasks = objectMapper.readValue(
+                                    hs.getTasksJson(),
+                                    new TypeReference<List<Map<String, Object>>>() {});
+                            map.put("tasks", parsedTasks);
+                        }
+                    } catch (Exception e) {
+                        log.warn("Could not parse tasksJson of harvested space: {}", e.getMessage());
+                    }
+                    bestSample = map;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not query dynamic knowledge samples: {}", e.getMessage());
+        }
+
+        // 2. Static RAG Benchmark Dataset Search
         for (Map<String, Object> sample : ragSamples) {
             String domain = (String) sample.getOrDefault("domain", "");
             String title = (String) sample.getOrDefault("title", "");
@@ -167,11 +213,11 @@ public class AiServiceImpl implements AiService {
         }
 
         if (bestSample != null) {
-            log.info("RAG Similarity Search selected sample: '{}' (Score: {}) for requirement: '{}'",
-                    bestSample.get("title"), maxScore, userRequirement);
+            log.info("RAG Similarity Search selected sample: '{}' (Score: {}, isHarvestedSpace: {}) for requirement: '{}'",
+                    bestSample.get("title"), maxScore, bestSample.get("isHarvestedSpace"), userRequirement);
         } else {
             log.info(
-                    "RAG Similarity Search found no direct static sample match for: '{}'. Proceeding with AI prompt engineering.",
+                    "RAG Similarity Search found no direct sample match for: '{}'. Proceeding with AI prompt engineering.",
                     userRequirement);
         }
         return bestSample;
@@ -267,6 +313,8 @@ public class AiServiceImpl implements AiService {
         // Perform RAG Similarity Retrieval
         Map<String, Object> matchedRagSample = findBestMatchingRagSample(request.getRequirementText());
         List<String> allCitationUrls = extractAllCitationUrls(matchedRagSample);
+        boolean isHarvestedSpace = matchedRagSample != null && Boolean.TRUE.equals(matchedRagSample.get("isHarvestedSpace"));
+        String harvestedSpaceTitle = isHarvestedSpace ? (String) matchedRagSample.getOrDefault("title", "Dự án tương đồng trước") : "";
 
         String sampleJsonContext = "";
         if (matchedRagSample != null) {
@@ -366,6 +414,10 @@ public class AiServiceImpl implements AiService {
 
         } else if (isClarificationStage) {
             // STAGE 1 (TURN 1): Mandatory Clarification Interview with Sample Answers
+            String learnedSpaceNotice = isHarvestedSpace
+                    ? String.format(" Đồng thời bổ sung một lời thông báo chuyên nghiệp: '💡 [TRI THỨC TỔ CHỨC]: Hệ thống nhận diện đề tài của bạn có nhiều nét tương đồng với dự án \"%s\" đã triển khai thành công trước đó. AI sẽ kế thừa các module nền tảng chuẩn và cùng bạn làm rõ các chức năng đặc thù mới.'", harvestedSpaceTitle)
+                    : "";
+
             systemPrompt = String.format(
                     """
                             Bạn là một Requirement Agent (Product Owner / Business Analyst Co-Pilot) chuyên nghiệp cho hệ thống PROGA.
@@ -373,7 +425,7 @@ public class AiServiceImpl implements AiService {
                             DÙ NGƯỜI DÙNG ĐÃ GỬI MÔ TẢ DÀI HOẶC NẠP FILE KẾ HOẠCH, BẠN BẮT BUỘC THỰC HIỆN PHỎNG VẤN 1-2 CÂU HỎI LÀM RÕ TRƯỚC!
 
                             Nhiệm vụ của bạn:
-                            1. Đọc yêu cầu bài toán/file nạp vào. Chào người dùng ngắn gọn và ghi nhận đã nhận được bài toán/tài liệu.
+                            1. Đọc yêu cầu bài toán/file nạp vào. Chào người dùng ngắn gọn và ghi nhận đã nhận được bài toán/tài liệu.%s
                             2. Đưa ra 1 - 2 câu hỏi nghiệp vụ làm rõ ngắn gọn, đơn giản, dễ hiểu.
                             3. BẮT BUỘC KÈM 1-2 VÍ DỤ / GỢI Ý TRẢ LỜI MẪU NGẮN GỌN CHO MỖI CÂU HỎI (Ví dụ: "👉 Gợi ý trả lời mẫu: Option A: Ưu tiên Đặt lịch khám / Option B: Ưu tiên Khám Telehealth").
                             4. Gợi ý 1 Tên dự án phù hợp trong `suggestedSpaceName`.
@@ -389,28 +441,19 @@ public class AiServiceImpl implements AiService {
                               "tasks": []
                             }
                             """,
-                    ragSourceRef, ragSourceUrl);
+                    learnedSpaceNotice, ragSourceRef, ragSourceUrl);
 
         } else if (isDemoPlanStage) {
             // STAGE 2 (TURN 2+ UNTIL USER APPROVES): Demo Plan Q&A Loop
             systemPrompt = String.format(
                     """
                             Bạn là một Requirement Agent (Product Owner / Business Analyst Co-Pilot) chuyên nghiệp cho hệ thống PROGA.
-                            ĐÂY LÀ GIAI ĐOẠN ĐÀM THOẠI HỎI ĐÁP VÀ ĐƯA RA BẢN KẾ HOẠCH DEMO DỰ ÁN CHO ĐẾN KHU NGƯỜI DÙNG ĐỒNG Ý.
-
-                            QUY TẮC LINH HOẠT VỀ SPRINT VÀ PHÂN BỔ NHÂN SỰ:
-                            - KHÔNG BẮT BUỘC LÚC NHÀO CŨNG LÀ 4 SPRINT THEO 4 PHẦN CỦA VÒNG ĐỜI DỰ ÁN!
-                            - Tùy vào độ phức tạp của bài toán và số lượng thành viên thực hiện (đặc biệt khi ít người, ví dụ 1-2 người), một phần nghiệp vụ có thể kéo dài qua NỀU SPRINT (VD: Sprint 2, Sprint 3, Sprint 4 cho Chức năng cốt lõi).
-                            - Tổng số Sprint có thể linh hoạt (5, 6, 8 Sprints...) đảm bảo phân bổ khối lượng vừa sức với đội ngũ.
-
-                            Nhiệm vụ của bạn:
-                            1. Dựa trên cuộc đàm thoại và phản hồi mới nhất của người dùng, cập nhật/xây dựng BẢN KẾ HOẠCH DEMO DỰ ÁN trình bày trong trường `summary` bao gồm:
-                               - 📌 **Tên Dự Án Gợi Ý**
-                               - ⏱️ **Quy Mô Dự Kiến**: Số lượng Sprint (Mỗi Sprint 1 TUẦN, tổng số Sprint điều chỉnh linh hoạt theo nhân sự & độ phức tạp) & Phân bổ nhân sự.
-                               - 🔗 **Căn Cứ Benchmark & Các Link Chứng Thực Thực Tế**: Liệt kê các tiêu chuẩn (Scrum Guide, IEEE Std 12207, Thông tư Bộ Y tế/NIST, Apache/Moodle Public Jira Trackers).
-                               - 📋 **Tóm Tắt Các Sprint & Milestone Nghiệp Vụ** (Phân bổ linh hoạt theo số thành viên).
-                               - ❓ **Lời Mời Phê Duyệt**:
-                                 "BẠN CÓ ĐỒNG Ý VỚI BẢN KẾ HOẠCH DEMO NÀY KHÔNG?\n👉 Nếu đồng ý, vui lòng phản hồi 'Chốt Task' hoặc 'Đồng ý kế hoạch' để AI khởi tạo Bảng Task chi tiết. Nếu cần thay đổi (ví dụ điều chỉnh thời gian, nhân sự, số Sprint), bạn hãy phản hồi các yêu cầu điều chỉnh!"
+                                                   - 📌 **Tên Dự Án Gợi Ý**
+                                - ⏱️ **Quy Mô Dự Kiến**: Số lượng Sprint (Mỗi Sprint 1 TUẦN, tổng số Sprint điều chỉnh linh hoạt theo nhân sự & độ phức tạp) & Phân bổ nhân sự.
+                                - 🔗 **Căn Cứ Benchmark & Các Link Chứng Thực Thực Tế**: Liệt kê các tiêu chuẩn (Scrum Guide, IEEE Std 12207, Thông tư Bộ Y tế/NIST, Apache/Moodle Public Jira Trackers).
+                                - 📋 **Tóm Tắt Các Sprint & Milestone Nghiệp Vụ** (Phân bổ linh hoạt theo số thành viên).
+                                - ❓ **Lời Mời Phê Duyệt**:
+                                  "BẠN CÓ ĐỒNG Ý VỚI BẢN KẾ HOẠCH DEMO NÀY KHÔNG?\\n👉 Nếu đồng ý, vui lòng phản hồi 'Chốt Task' hoặc 'Đồng ý kế hoạch' để AI khởi tạo Bảng Task chi tiết. Nếu cần thay đổi (ví dụ điều chỉnh thời gian, nhân sự, số Sprint), bạn hãy phản hồi các yêu cầu điều chỉnh!"
                             2. Trả về `isDataSufficient`: false và `tasks`: [] RỖNG NGUYÊN BẢN.
 
                             YÊU CẦU ĐỊNH DẠNG STRICT JSON:
@@ -427,6 +470,18 @@ public class AiServiceImpl implements AiService {
 
         } else {
             // STAGE 3 (EXPLICIT USER APPROVAL): Full Detailed WBS Task Generation
+            String differentialGuidance = isHarvestedSpace
+                    ? String.format("""
+
+                            ⭐ CẢNH BÁO TỐI ƯU HÓA TOKEN & PHÂN RÃ VI SAI (DIFFERENTIAL WBS REUSE):
+                            Hệ thống đã truy xuất dự án tương đồng đã hoàn thành trong tổ chức: "%s".
+                            BẮT BUỘC BÓC TÁCH THEO NGUYÊN TẮC VI SAI:
+                            1. TÁI SỬ DỤNG: Kế thừa cấu trúc các Sprint & Task nền tảng chuẩn (Schema CSDL, Xác thực Auth, Quản lý tài khoản, Phân quyền RBAC, Docker/CI/CD, CRUD cơ bản) từ mẫu tham khảo trên, tinh chỉnh tên & mô tả cho phù hợp với đề tài mới.
+                            2. TẬP TRUNG SINH MỚI: Chỉ tập trung sinh mới các Task cho những tính năng nghiệp vụ đặc thù mới mà bài toán hiện tại yêu cầu nhưng dự án mẫu chưa có.
+                            3. LOẠI BỎ: Không đưa vào những tính năng của dự án cũ mà đề tài mới không yêu cầu.
+                            """, harvestedSpaceTitle)
+                    : "";
+
             systemPrompt = String.format(
                     """
                             Bạn là một Requirement Agent (Product Owner / Business Analyst) chuyên nghiệp cho hệ thống PROGA.
@@ -450,6 +505,7 @@ public class AiServiceImpl implements AiService {
                                - Mỗi Task phải nhỏ, đơn lẻ, dễ quản lý (Thời gian ước tính từ 1 - 3 ngày/task).
                                - Bóc tách chi tiết từ 15 đến 30+ Tasks bao quát đầy đủ các giai đoạn vòng đời.
                             7. ĐÁNH GIÁ RỦI RO THEO BẰNG CHỨNG BENCHMARK THỰC TẾ: Các cảnh báo rủi ro ('riskWarning') phải trích dẫn căn cứ thực tế (Ví dụ: Thông tư 46/2018/TT-BYT, Tiêu chuẩn NIST SP 800-38A, Tiêu chuẩn HLS RFC 8216, OWASP Top 10).
+                            %s
 
                             ĐÂY LÀ MẪU RAG THAM KHẢO CẤU TRÚC (%s):
                             %s
@@ -476,7 +532,7 @@ public class AiServiceImpl implements AiService {
                               ]
                             }
                             """,
-                    ragSourceRef, sampleJsonContext, ragSourceRef, ragSourceUrl);
+                    differentialGuidance, ragSourceRef, sampleJsonContext, ragSourceRef, ragSourceUrl);
         }
 
         String userPrompt = historyBuilder.toString();
@@ -1100,6 +1156,45 @@ public class AiServiceImpl implements AiService {
             case TECHNICAL_ADVISOR ->
                 "Bạn là Technical Advisor Agent của PROGA. Tư vấn kiến trúc kỹ thuật, giải pháp phát triển và khắc phục bug.";
         };
+    }
+
+    @Override
+    @Transactional
+    public void harvestKnowledge(KnowledgeHarvestRequest request) {
+        log.info("Harvesting knowledge from Space: '{}' (spaceId={})", request.getTitle(), request.getSpaceId());
+        AiKnowledgeSample sample = AiKnowledgeSample.builder()
+                .spaceId(request.getSpaceId())
+                .title(request.getTitle())
+                .domain(request.getDomain() != null ? request.getDomain() : "Phát triển phần mềm Agile")
+                .requirementText(request.getRequirementText())
+                .summary(request.getSummary())
+                .tasksJson(request.getTasksJson())
+                .build();
+        knowledgeSampleRepository.save(sample);
+
+        // Also index Document into PgVector Store for vector semantic search if active
+        if (vectorStoreService != null) {
+            try {
+                Map<String, Object> metadata = new HashMap<>();
+                metadata.put("knowledge_id", sample.getId());
+                metadata.put("title", sample.getTitle());
+                metadata.put("domain", sample.getDomain());
+                metadata.put("type", "HARVESTED_SPACE");
+                org.springframework.ai.document.Document doc = new org.springframework.ai.document.Document(
+                        sample.getTitle() + " - " + sample.getRequirementText(),
+                        metadata
+                );
+                vectorStoreService.ingestDocuments(List.of(doc));
+            } catch (Exception e) {
+                log.warn("Could not ingest harvested space into Vector Store: {}", e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AiKnowledgeSample> getHarvestedSamples() {
+        return knowledgeSampleRepository.findAllByOrderByCreatedAtDesc();
     }
 
     private String extractJson(String text) {
