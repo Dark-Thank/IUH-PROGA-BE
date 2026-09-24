@@ -7,7 +7,6 @@ import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -31,9 +30,10 @@ public class DocumentParserService {
         String extractedText = "";
 
         String fileNameLower = originalFilename.toLowerCase();
-        
+
         // Strategy 1: Direct UTF-8 Reading for plain text / markdown files
-        if (fileNameLower.endsWith(".txt") || fileNameLower.endsWith(".md") || fileNameLower.endsWith(".json") || fileNameLower.endsWith(".csv")) {
+        if (fileNameLower.endsWith(".txt") || fileNameLower.endsWith(".md") || fileNameLower.endsWith(".json")
+                || fileNameLower.endsWith(".csv")) {
             try {
                 extractedText = new String(file.getBytes(), StandardCharsets.UTF_8);
             } catch (Exception e) {
@@ -46,7 +46,8 @@ public class DocumentParserService {
             try (InputStream inputStream = file.getInputStream()) {
                 extractedText = tika.parseToString(inputStream);
             } catch (Throwable t) {
-                log.warn("Apache Tika parseToString failed for file {}: {}. Trying byte stream fallback.", originalFilename, t.getMessage());
+                log.warn("Apache Tika parseToString failed for file {}: {}. Trying byte stream fallback.",
+                        originalFilename, t.getMessage());
                 try {
                     String rawStr = new String(file.getBytes(), StandardCharsets.UTF_8);
                     // Filter printable characters
@@ -63,10 +64,10 @@ public class DocumentParserService {
 
         // Clean multiple newlines and spaces
         String cleanedText = extractedText.replaceAll("\\r\\n|\\r", "\n").replaceAll("\n{3,}", "\n\n").trim();
-        
+
         // Chunking for Vector Store (1,000 chars / chunk)
         List<Document> docChunks = createChunks(cleanedText, originalFilename);
-        
+
         // Ingest into Vector Store if available
         try {
             vectorStoreService.ingestDocuments(docChunks);
@@ -74,7 +75,9 @@ public class DocumentParserService {
             log.warn("Vector Store ingestion warning: {}", e.getMessage());
         }
 
-        String previewText = cleanedText.length() > 3000 ? cleanedText.substring(0, 3000) + "...\n[Đã bóc tách thành công toàn bộ vào Vector Store]" : cleanedText;
+        String previewText = cleanedText.length() > 3000
+                ? cleanedText.substring(0, 3000) + "...\n[Đã bóc tách thành công toàn bộ vào Vector Store]"
+                : cleanedText;
 
         return DocumentParseResponse.builder()
                 .fileName(originalFilename)
@@ -88,7 +91,7 @@ public class DocumentParserService {
         List<Document> chunks = new ArrayList<>();
         int chunkSize = 1000; // characters
         int overlap = 100;
-        
+
         int length = text.length();
         int start = 0;
         int chunkIdx = 1;
@@ -96,15 +99,16 @@ public class DocumentParserService {
         while (start < length) {
             int end = Math.min(start + chunkSize, length);
             String chunkContent = text.substring(start, end);
-            
+
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("file_name", fileName);
             metadata.put("chunk_index", chunkIdx++);
-            
+
             chunks.add(new Document(chunkContent, metadata));
-            
+
             start += chunkSize - overlap;
-            if (start >= length) break;
+            if (start >= length)
+                break;
         }
 
         return chunks;

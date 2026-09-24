@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/workspaces")
@@ -20,7 +19,8 @@ public class WorkspaceController {
     private final WorkspaceService workspaceService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<WorkspaceResponse>> createWorkspace(@Valid @RequestBody WorkspaceRequest request) {
+    public ResponseEntity<ApiResponse<WorkspaceResponse>> createWorkspace(
+            @Valid @RequestBody WorkspaceRequest request) {
         WorkspaceResponse response = workspaceService.createWorkspace(request);
         return ResponseEntity.ok(ApiResponse.success("Workspace created successfully", response));
     }
@@ -36,7 +36,8 @@ public class WorkspaceController {
     }
 
     @GetMapping("/user/{userId}/classified")
-    public ResponseEntity<ApiResponse<com.proga.workspace_service.dto.ClassifiedWorkspacesResponse>> getClassifiedWorkspaces(@PathVariable long userId) {
+    public ResponseEntity<ApiResponse<com.proga.workspace_service.dto.ClassifiedWorkspacesResponse>> getClassifiedWorkspaces(
+            @PathVariable long userId) {
         return ResponseEntity.ok(ApiResponse.success(workspaceService.getClassifiedWorkspaces(userId)));
     }
 
@@ -44,8 +45,7 @@ public class WorkspaceController {
     public ResponseEntity<ApiResponse<Void>> inviteMember(
             @PathVariable long id,
             @RequestParam long userId,
-            @RequestParam(defaultValue = "3") long roleId
-    ) {
+            @RequestParam(defaultValue = "3") long roleId) {
         workspaceService.inviteMember(id, userId, roleId);
         return ResponseEntity.ok(ApiResponse.success("Member invited successfully", null));
     }
@@ -53,8 +53,7 @@ public class WorkspaceController {
     @PutMapping("/{id}/invitations/accept")
     public ResponseEntity<ApiResponse<Void>> acceptInvitation(
             @PathVariable long id,
-            @RequestParam long userId
-    ) {
+            @RequestParam long userId) {
         workspaceService.acceptInvitation(id, userId);
         return ResponseEntity.ok(ApiResponse.success("Invitation accepted successfully", null));
     }
@@ -62,19 +61,20 @@ public class WorkspaceController {
     @PutMapping("/{id}/invitations/decline")
     public ResponseEntity<ApiResponse<Void>> declineInvitation(
             @PathVariable long id,
-            @RequestParam long userId
-    ) {
+            @RequestParam long userId) {
         workspaceService.declineInvitation(id, userId);
         return ResponseEntity.ok(ApiResponse.success("Invitation declined successfully", null));
     }
 
     @GetMapping("/{id}/members")
-    public ResponseEntity<ApiResponse<List<com.proga.workspace_service.model.WorkspaceMember>>> getWorkspaceMembers(@PathVariable long id) {
+    public ResponseEntity<ApiResponse<List<com.proga.workspace_service.model.WorkspaceMember>>> getWorkspaceMembers(
+            @PathVariable long id) {
         return ResponseEntity.ok(ApiResponse.success(workspaceService.getWorkspaceMembers(id)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<WorkspaceResponse>> updateWorkspace(@PathVariable long id, @Valid @RequestBody WorkspaceRequest request) {
+    public ResponseEntity<ApiResponse<WorkspaceResponse>> updateWorkspace(@PathVariable long id,
+            @Valid @RequestBody WorkspaceRequest request) {
         WorkspaceResponse response = workspaceService.updateWorkspace(id, request);
         return ResponseEntity.ok(ApiResponse.success("Workspace updated successfully", response));
     }

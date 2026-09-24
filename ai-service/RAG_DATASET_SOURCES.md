@@ -66,3 +66,13 @@ Tài liệu này liệt kê toàn bộ các đường link tài liệu tiêu chu
 - **Thông tư 13/2020/TT-BGDĐT của Bộ Giáo dục & Đào tạo**:
   - *Quy định về*: Tiêu chuẩn hạ tầng công nghệ thông tin, phòng máy thực hành và phần mềm hỗ trợ đào tạo tại các trường học Việt Nam.
   - *Link văn bản chính thức*: [https://thuvienphapluat.vn/van-ban/Tai-chinh-nha-nuoc/Thong-tu-13-2020-TT-BGDDT-tieu-chuan-co-so-vat-chat-truong-mam-non-tieu-hoc-trung-hoc-co-so-443719.aspx](https://thuvienphapluat.vn/van-ban/Tai-chinh-nha-nuoc/Thong-tu-13-2020-TT-BGDDT-tieu-chuan-co-so-vat-chat-truong-mam-non-tieu-hoc-trung-hoc-co-so-443719.aspx)
+
+---
+
+## 9. BỘ MẪU DỮ LIỆU EXCEL QUẢN LÝ DỰ ÁN, RỦI RO & TIMELINE (EXCEL PM BENCHMARK DATASETS)
+- **Mẫu File Excel 1 - Bóc tách Công việc WBS (Project WBS Breakdown Template)**:
+  - *Trích xuất*: Cấu trúc danh sách Task nguyên tử, phân bổ Sprint và Gán vai trò chuyên môn (`assignedRole`).
+- **Mẫu File Excel 2 - Ma trận Phân tích Rủi ro & Dự phòng (Project Risk Matrix & Contingency Buffer)**:
+  - *Trích xuất*: Chỉ số ngày dự phòng rủi ro kỹ thuật (`bufferDays`), mức độ ưu tiên (`priority`) và cảnh báo rủi ro (`riskWarning`).
+- **Mẫu File Excel 3 - Lập Kế hoạch Tiến độ & Biểu đồ Timeline (Gantt Chart Timeline Schedule Template)**:
+  - *Trích xuất*: Ước tính số ngày làm việc tối ưu (`estimatedDays`) và lộ trình thực thi theo Sprint.

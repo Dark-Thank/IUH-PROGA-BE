@@ -5,10 +5,10 @@ import com.proga.auth_service.dto.LoginRequest;
 import com.proga.auth_service.dto.RegisterRequest;
 import com.proga.auth_service.dto.UserResponse;
 
-import java.util.UUID;
-
 public interface AuthService {
     UserResponse register(RegisterRequest request);
+
     AuthResponse login(LoginRequest request);
+
     UserResponse getCurrentUser(long userId);
 }

@@ -20,4 +20,8 @@ public interface AiService {
     AiChatMessageResponse analyzePmProgressAndRisk(long spaceId);
 
     AiChatMessageResponse getTechnicalAdvice(long taskId, String problemDescription);
+
+    void harvestKnowledge(KnowledgeHarvestRequest request);
+
+    List<com.proga.ai_service.model.AiKnowledgeSample> getHarvestedSamples();
 }

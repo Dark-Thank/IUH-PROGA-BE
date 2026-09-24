@@ -5,7 +5,6 @@ import com.proga.workspace_service.model.TaskStatus;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Getter
 @Setter

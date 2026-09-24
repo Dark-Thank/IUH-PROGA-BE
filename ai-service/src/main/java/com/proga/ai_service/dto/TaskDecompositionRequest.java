@@ -17,4 +17,6 @@ public class TaskDecompositionRequest {
 
     @NotBlank(message = "Requirement text is required")
     private String requirementText;
+
+    private String currentTasksJson; // Real-time client-side WBS canvas state (dragged/modified tasks)
 }
