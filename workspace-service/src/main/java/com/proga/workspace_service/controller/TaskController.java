@@ -70,4 +70,21 @@ public class TaskController {
         taskService.deleteTasksBatch(request.getTaskIds());
         return ResponseEntity.ok(ApiResponse.success("Tasks deleted successfully", null));
     }
+
+    @GetMapping("/space/{spaceId}/trash")
+    public ResponseEntity<ApiResponse<List<TaskResponse>>> getDeletedTasksBySpace(@PathVariable long spaceId) {
+        return ResponseEntity.ok(ApiResponse.success(taskService.getDeletedTasksBySpace(spaceId)));
+    }
+
+    @PostMapping("/{id}/restore")
+    public ResponseEntity<ApiResponse<TaskResponse>> restoreTask(@PathVariable long id) {
+        TaskResponse response = taskService.restoreTask(id);
+        return ResponseEntity.ok(ApiResponse.success("Task restored successfully", response));
+    }
+
+    @DeleteMapping("/{id}/permanent")
+    public ResponseEntity<ApiResponse<Void>> permanentDeleteTask(@PathVariable long id) {
+        taskService.permanentDeleteTask(id);
+        return ResponseEntity.ok(ApiResponse.success("Task permanently deleted", null));
+    }
 }
