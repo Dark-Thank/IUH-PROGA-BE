@@ -33,8 +33,7 @@ public class VectorStoreService {
                             .query(query)
                             .topK(topK)
                             .similarityThreshold(0.65)
-                            .build()
-            );
+                            .build());
         } catch (Exception e) {
             log.error("Error executing Vector Similarity Search: {}", e.getMessage());
             return Collections.emptyList();

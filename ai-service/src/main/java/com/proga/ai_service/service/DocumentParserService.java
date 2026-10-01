@@ -19,9 +19,18 @@ public class DocumentParserService {
     private final VectorStoreService vectorStoreService;
     private final Tika tika = new Tika();
 
+    private static final long MAX_FILE_SIZE = 15 * 1024 * 1024L; // 15MB limit
+    private static final int MAX_CHARACTER_LIMIT = 50000; // ~ 30 standard A4 pages
+
     public DocumentParseResponse parseAndIngestDocument(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File tải lên không được để rỗng");
+        }
+
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException(String.format(
+                    "Dung lượng file (%d MB) vượt quá giới hạn tối đa cho phép (15 MB). Vui lòng chọn file dưới 15MB.",
+                    file.getSize() / (1024 * 1024)));
         }
 
         String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "Uploaded_Document";
