@@ -178,7 +178,8 @@ public class AiServiceImpl implements AiService {
                         if (hs.getTasksJson() != null && !hs.getTasksJson().isBlank()) {
                             List<Map<String, Object>> parsedTasks = objectMapper.readValue(
                                     hs.getTasksJson(),
-                                    new TypeReference<List<Map<String, Object>>>() {});
+                                    new TypeReference<List<Map<String, Object>>>() {
+                                    });
                             map.put("tasks", parsedTasks);
                         }
                     } catch (Exception e) {
@@ -213,7 +214,8 @@ public class AiServiceImpl implements AiService {
         }
 
         if (bestSample != null) {
-            log.info("RAG Similarity Search selected sample: '{}' (Score: {}, isHarvestedSpace: {}) for requirement: '{}'",
+            log.info(
+                    "RAG Similarity Search selected sample: '{}' (Score: {}, isHarvestedSpace: {}) for requirement: '{}'",
                     bestSample.get("title"), maxScore, bestSample.get("isHarvestedSpace"), userRequirement);
         } else {
             log.info(
@@ -272,12 +274,14 @@ public class AiServiceImpl implements AiService {
         // prompt
         List<AiChatMessage> existingMsgs = messageRepository.findByThreadIdOrderByCreatedAtAsc(thread.getId());
 
-        // Check if thread already has decomposed tasks in previous assistant message or user-provided live WBS canvas
+        // Check if thread already has decomposed tasks in previous assistant message or
+        // user-provided live WBS canvas
         // (Preview Canvas State)
         String lastAssistantTaskJson = "";
         if (request.getCurrentTasksJson() != null && !request.getCurrentTasksJson().trim().isEmpty()
                 && request.getCurrentTasksJson().trim().startsWith("[")) {
-            // PRIORITY 1: User explicitly provided the live drag-and-drop / edited WBS canvas state!
+            // PRIORITY 1: User explicitly provided the live drag-and-drop / edited WBS
+            // canvas state!
             lastAssistantTaskJson = request.getCurrentTasksJson().trim();
         } else {
             // Fallback to database history
@@ -313,8 +317,11 @@ public class AiServiceImpl implements AiService {
         // Perform RAG Similarity Retrieval
         Map<String, Object> matchedRagSample = findBestMatchingRagSample(request.getRequirementText());
         List<String> allCitationUrls = extractAllCitationUrls(matchedRagSample);
-        boolean isHarvestedSpace = matchedRagSample != null && Boolean.TRUE.equals(matchedRagSample.get("isHarvestedSpace"));
-        String harvestedSpaceTitle = isHarvestedSpace ? (String) matchedRagSample.getOrDefault("title", "Dự án tương đồng trước") : "";
+        boolean isHarvestedSpace = matchedRagSample != null
+                && Boolean.TRUE.equals(matchedRagSample.get("isHarvestedSpace"));
+        String harvestedSpaceTitle = isHarvestedSpace
+                ? (String) matchedRagSample.getOrDefault("title", "Dự án tương đồng trước")
+                : "";
 
         String sampleJsonContext = "";
         if (matchedRagSample != null) {
@@ -415,7 +422,9 @@ public class AiServiceImpl implements AiService {
         } else if (isClarificationStage) {
             // STAGE 1 (TURN 1): Mandatory Clarification Interview with Sample Answers
             String learnedSpaceNotice = isHarvestedSpace
-                    ? String.format(" Đồng thời bổ sung một lời thông báo chuyên nghiệp: '💡 [TRI THỨC TỔ CHỨC]: Hệ thống nhận diện đề tài của bạn có nhiều nét tương đồng với dự án \"%s\" đã triển khai thành công trước đó. AI sẽ kế thừa các module nền tảng chuẩn và cùng bạn làm rõ các chức năng đặc thù mới.'", harvestedSpaceTitle)
+                    ? String.format(
+                            " Đồng thời bổ sung một lời thông báo chuyên nghiệp: '💡 [TRI THỨC TỔ CHỨC]: Hệ thống nhận diện đề tài của bạn có nhiều nét tương đồng với dự án \"%s\" đã triển khai thành công trước đó. AI sẽ kế thừa các module nền tảng chuẩn và cùng bạn làm rõ các chức năng đặc thù mới.'",
+                            harvestedSpaceTitle)
                     : "";
 
             systemPrompt = String.format(
@@ -427,7 +436,10 @@ public class AiServiceImpl implements AiService {
                             Nhiệm vụ của bạn:
                             1. Đọc yêu cầu bài toán/file nạp vào. Chào người dùng ngắn gọn và ghi nhận đã nhận được bài toán/tài liệu.%s
                             2. Đưa ra 1 - 2 câu hỏi nghiệp vụ làm rõ ngắn gọn, đơn giản, dễ hiểu.
-                            3. BẮT BUỘC KÈM 1-2 VÍ DỤ / GỢI Ý TRẢ LỜI MẪU NGẮN GỌN CHO MỖI CÂU HỎI (Ví dụ: "👉 Gợi ý trả lời mẫu: Option A: Ưu tiên Đặt lịch khám / Option B: Ưu tiên Khám Telehealth").
+                            3. BẮT BUỘC KÈM GỢI Ý TRẢ LỜI MẪU CHO MỖI CÂU HỎI, TRÌNH BÀY RÕ RÀNG TỪNG DÒNG:
+                               Gợi ý trả lời mẫu:
+                               • Option A: [Mô tả lựa chọn A]
+                               • Option B: [Mô tả lựa chọn B]
                             4. Gợi ý 1 Tên dự án phù hợp trong `suggestedSpaceName`.
                             5. Trả về `isDataSufficient`: false và `tasks`: [] RỖNG NGUYÊN BẢN.
 
@@ -448,19 +460,42 @@ public class AiServiceImpl implements AiService {
             systemPrompt = String.format(
                     """
                             Bạn là một Requirement Agent (Product Owner / Business Analyst Co-Pilot) chuyên nghiệp cho hệ thống PROGA.
-                                                   - 📌 **Tên Dự Án Gợi Ý**
-                                - ⏱️ **Quy Mô Dự Kiến**: Số lượng Sprint (Mỗi Sprint 1 TUẦN, tổng số Sprint điều chỉnh linh hoạt theo nhân sự & độ phức tạp) & Phân bổ nhân sự.
-                                - 🔗 **Căn Cứ Benchmark & Các Link Chứng Thực Thực Tế**: Liệt kê các tiêu chuẩn (Scrum Guide, IEEE Std 12207, Thông tư Bộ Y tế/NIST, Apache/Moodle Public Jira Trackers).
-                                - 📋 **Tóm Tắt Các Sprint & Milestone Nghiệp Vụ** (Phân bổ linh hoạt theo số thành viên).
-                                - ❓ **Lời Mời Phê Duyệt**:
-                                  "BẠN CÓ ĐỒNG Ý VỚI BẢN KẾ HOẠCH DEMO NÀY KHÔNG?\\n👉 Nếu đồng ý, vui lòng phản hồi 'Chốt Task' hoặc 'Đồng ý kế hoạch' để AI khởi tạo Bảng Task chi tiết. Nếu cần thay đổi (ví dụ điều chỉnh thời gian, nhân sự, số Sprint), bạn hãy phản hồi các yêu cầu điều chỉnh!"
-                            2. Trả về `isDataSufficient`: false và `tasks`: [] RỖNG NGUYÊN BẢN.
+                            Nhiệm vụ: Trình bày Bản Kế Hoạch Dự Án Sơ Bộ (Demo Project Plan) một cách súc tích, chuyên nghiệp, cấu trúc rõ ràng để người dùng xem xét và phê duyệt trước khi phân rã chi tiết từng Task WBS.
+
+                            CẢNH BÁO TỐI CAO VỀ THỜI GIAN & QUY TRÌNH PHẦN MỀM:
+                            1. QUY TẮC THỜI LƯỢNG SPRINT:
+                               - MẶC ĐỊNH MỖI SPRINT KÉO DÀI ĐÚNG 1 TUẦN (7 ngày).
+                               - CHỈ KHI một Sprint có độ phức tạp kỹ thuật, module nòng cốt hoặc rủi ro thì mới kéo dài hoặc rút ngắn thời lượng của sprint đó tùy vào độ phức tạp của task trong sprint.
+                               - TỔNG THỜI GIAN CÁC SPRINT PHẢI NẰM GỌN TRONG TỔNG SỐ NGÀY NGƯỜI DÙNG ĐÃ CẤU HÌNH. TUYỆT ĐỐI KHÔNG ĐƯỢC TỰ Ý TĂNG THÊM THỜI GIAN HOẶC THAY ĐỔI NGÀY KẾ THÚC CỦA DỰ ÁN!
+                               - NẾU người dùng yêu cầu "thêm sprint" (ví dụ từ 3 Sprint thành 4 hay 5 Sprint), bạn BẮT BUỘC giữ nguyên tổng thời gian đã chọn, phân bổ và cân đối lại thời lượng các Sprint cho vừa vặn trong tổng số ngày đó!
+                            2. QUY TRÌNH PHẦN MỀM CHUẨN (BẮT BUỘC PHẢI CÓ SPRINT KIỂM THỬ):
+                               - Một dự án phần mềm theo chuẩn Agile/Scrum BẮT BUỘC phải có Sprint (hoặc giai đoạn) dành riêng cho KIỂM THỬ HỆ THỐNG (Testing, QA, Test Cases, UAT, Tích hợp hệ thống, Sửa lỗi và Đóng gói). TUYỆT ĐỐI KHÔNG ĐƯỢC BỎ QUA GIAI ĐOẠN KIỂM THỬ!
+                            3. ĐỌC KỸ TÀI LIỆU NẠP VÀO:
+                               - Đọc kỹ số lượng thành viên thực hiện được nêu trong tài liệu (ví dụ đề tài 2 người làm: phân bổ đúng cho 2 người, không bịa người thứ 3, thứ 4).
+
+                            HÃY TRÌNH BÀY TRONG TRƯỜNG `summary` THEO ĐÚNG CẤU TRÚC:
+                            **Tên Dự Án Gợi Ý**: [Tên dự án phù hợp]
+                            **Quy Mô Dự Kiến**: [Số lượng] Sprint (Mặc định 1 tuần/Sprint nhưng vẫn phải dựa vào độ phức tạp của các task trong sprint đó mà có thể kéo dài hoặc rút ngắn thời gian của 1 sprint) và phân bổ thành viên.
+                            **Căn Cứ Tiêu Chuẩn**: Scrum Guide, IEEE Std 12207 hoặc tiêu chuẩn chuyên ngành liên quan.
+                            **Lộ Trình Các Sprints Dự Kiến**:
+                            - Sprint 1 (Tuần 1): [Mục tiêu và phạm vi công việc chính]
+                            - Sprint 2 (Tuần 2): [Mục tiêu và phạm vi công việc chính]
+                            ...
+                            - Sprint cuối (Tuần ...): Kiểm thử hệ thống (QA/Testing/UAT), Tích hợp tổng thể và Đóng gói báo cáo bàn giao
+
+                            **Xác Nhận Kế Hoạch**:
+                            Bạn có đồng ý với khung kế hoạch dự kiến này không? Bạn có thể bấm nút duyệt ngay bên dưới hoặc yêu cầu điều chỉnh thêm.
+
+                            YÊU CẦU:
+                            - Tuyệt đối không dùng các biểu tượng emoji rối mắt như 📌, ⏱️, 🔗, 📋, ❓, 👉 ở đầu dòng.
+                            - Cấu trúc các dòng Sprint chuẩn xác theo định dạng: `- Sprint X (Tuần X): [Mô tả]` để hệ thống tự động bóc tách thành thẻ kế hoạch trực quan.
+                            - Trả về `isDataSufficient`: false và `tasks`: [] RỖNG NGUYÊN BẢN.
 
                             YÊU CẦU ĐỊNH DẠNG STRICT JSON:
                             {
                               "isDataSufficient": false,
                               "suggestedSpaceName": "Tên dự án gợi ý",
-                              "summary": "Bản Kế Hoạch Demo Dự Án cập nhật ngắn gọn kèm link chứng thực và lời mời người dùng phê duyệt",
+                              "summary": "Bản Kế Hoạch Demo Dự Án chuẩn cấu trúc trên",
                               "sourceReference": "%s",
                               "sourceUrl": "%s",
                               "tasks": []
@@ -471,15 +506,17 @@ public class AiServiceImpl implements AiService {
         } else {
             // STAGE 3 (EXPLICIT USER APPROVAL): Full Detailed WBS Task Generation
             String differentialGuidance = isHarvestedSpace
-                    ? String.format("""
+                    ? String.format(
+                            """
 
-                            ⭐ CẢNH BÁO TỐI ƯU HÓA TOKEN & PHÂN RÃ VI SAI (DIFFERENTIAL WBS REUSE):
-                            Hệ thống đã truy xuất dự án tương đồng đã hoàn thành trong tổ chức: "%s".
-                            BẮT BUỘC BÓC TÁCH THEO NGUYÊN TẮC VI SAI:
-                            1. TÁI SỬ DỤNG: Kế thừa cấu trúc các Sprint & Task nền tảng chuẩn (Schema CSDL, Xác thực Auth, Quản lý tài khoản, Phân quyền RBAC, Docker/CI/CD, CRUD cơ bản) từ mẫu tham khảo trên, tinh chỉnh tên & mô tả cho phù hợp với đề tài mới.
-                            2. TẬP TRUNG SINH MỚI: Chỉ tập trung sinh mới các Task cho những tính năng nghiệp vụ đặc thù mới mà bài toán hiện tại yêu cầu nhưng dự án mẫu chưa có.
-                            3. LOẠI BỎ: Không đưa vào những tính năng của dự án cũ mà đề tài mới không yêu cầu.
-                            """, harvestedSpaceTitle)
+                                    ⭐ CẢNH BÁO TỐI ƯU HÓA TOKEN & PHÂN RÃ VI SAI (DIFFERENTIAL WBS REUSE):
+                                    Hệ thống đã truy xuất dự án tương đồng đã hoàn thành trong tổ chức: "%s".
+                                    BẮT BUỘC BÓC TÁCH THEO NGUYÊN TẮC VI SAI:
+                                    1. TÁI SỬ DỤNG: Kế thừa cấu trúc các Sprint & Task nền tảng chuẩn (Schema CSDL, Xác thực Auth, Quản lý tài khoản, Phân quyền RBAC, Docker/CI/CD, CRUD cơ bản) từ mẫu tham khảo trên, tinh chỉnh tên & mô tả cho phù hợp với đề tài mới.
+                                    2. TẬP TRUNG SINH MỚI: Chỉ tập trung sinh mới các Task cho những tính năng nghiệp vụ đặc thù mới mà bài toán hiện tại yêu cầu nhưng dự án mẫu chưa có.
+                                    3. LOẠI BỎ: Không đưa vào những tính năng của dự án cũ mà đề tài mới không yêu cầu.
+                                    """,
+                            harvestedSpaceTitle)
                     : "";
 
             systemPrompt = String.format(
@@ -488,28 +525,23 @@ public class AiServiceImpl implements AiService {
                             ĐÂY LÀ GIAI ĐOẠN PHÂN RÃ CHI TIẾT BẢNG TASK WBS (Người dùng đã chốt/đồng ý kế hoạch demo).
 
                             CẢNH BÁO TỐI CAO VỀ BÀI TOÁN & QUY TRÌNH PHÂN RÃ CHI TIẾT:
-                            1. BẮT BUỘC ĐỌC VÀ BÓC TÁCH TẤT CẢ CÁC THÔNG TIN TRONG ĐÀM THOẠI LẪN FILE KẾ HOẠCH NẠP VÀO (.pdf, .docx).
-                            2. QUY TẮC LINH HOẠT VỀ SPRINT VÀ CHỦ ĐỀ NGHIỆP VỤ:
-                               - KHÔNG KHÓA CỨNG 4 SPRINT! Cần linh hoạt phân bổ số Sprint (4, 5, 6, 8+ Sprint) tùy theo độ phức tạp bài toán và số lượng người làm.
-                               - Nếu team ít người (1-2 người), một phần nghiệp vụ cốt lõi có thể kéo dài qua nhiều Sprint (VD: Sprint 2, Sprint 3, Sprint 4...).
-                               - Đặt tên Sprint kèm chủ đề nghiệp vụ dạng: "Sprint 1: CSDL Schema & Auth Microservices", "Sprint 2: Chức Năng Nghiệp Vụ Cốt Lõi (Phần 1)", "Sprint 3: Chức Năng Nghiệp Vụ Cốt Lõi (Phần 2)...".
-                            3. QUY TẮC THỜI GIAN SPRINT MẶC ĐỊNH MỖI SPRINT TỐI THIỂU 1 TUẦN (7 NGÀY):
-                               - Thời gian 1 Sprint mặc định là 1 TUẦN (7 NGÀY) hoặc 2 TUẦN (14 NGÀY). TUYỆT ĐỐI KHÔNG ĐƯỢC MẶC ĐỊNH SPRINT DƯỚI 1 TUẦN.
-                            4. QUY TẮC TRÍCH XUẤT CHÍNH XÁC NHÂN SỰ / THÀNH VIÊN DỰ ÁN (KHÔNG BỊA THÊM):
-                               - NẾU TÀI LIỆU CÓ NÊU TÊN CÁC THÀNH VIÊN (Ví dụ: "Nguyễn Văn A, Trần Thị B"): BẮT BUỘC chỉ gán đúng tên các thành viên đó vào `suggestedMemberName`. TUYỆT ĐỐI KHÔNG BỊA THÊM TÊN KHÁC.
-                               - NẾU TÀI LIỆU CHỈ NÊU SỐ LƯỢNG (Ví dụ: "Team 2 người"): Bạn BẮT BUỘC chỉ gán `suggestedMemberName` là "Thành viên 1", "Thành viên 2" (hoặc vai trò gán cho 2 thành viên đó).
-                            5. QUY TẮC BẢO TOÀN DUNG LƯỢNG TASK VÀ ĐIỀU CHỈNH SỐ SPRINT THEO SỐ THÀNH VIÊN:
-                               - NẾU SỐ THÀNH VIÊN ÍT (Ví dụ: 2 người): TUYỆT ĐỐI KHÔNG ĐƯỢC CẮT BỚT TASK HOẶC GIẢM KHỐI LƯỢNG CÔNG VIỆC CỦA DỰ ÁN!
-                               - Tổng số Task và Scope bài toán là KHÔNG ĐỔI. Khi chỉ có 2 người làm, BẠN BẮT BUỘC PHẢI TĂNG SỐ SPRINT VÀ THỜI GIAN KÉO DÀI (Ví dụ: Phân bổ 6 - 8 Sprint thay vì 3 Sprint) và gán 2 người đó đảm nhiệm xoay vòng các vai trò (Backend, Frontend, QA).
-                            6. QUY TẮC CHIA NHỎ VÀ CHI TIẾT HÓA WBS TASK:
-                               - Mỗi Task phải nhỏ, đơn lẻ, dễ quản lý (Thời gian ước tính từ 1 - 3 ngày/task).
-                               - Bóc tách chi tiết từ 15 đến 30+ Tasks bao quát đầy đủ các giai đoạn vòng đời.
-                            7. ĐÁNH GIÁ RỦI RO THEO BẰNG CHỨNG BENCHMARK THỰC TẾ: Các cảnh báo rủi ro ('riskWarning') phải trích dẫn căn cứ thực tế (Ví dụ: Thông tư 46/2018/TT-BYT, Tiêu chuẩn NIST SP 800-38A, Tiêu chuẩn HLS RFC 8216, OWASP Top 10).
-                            8. QUY TẮC PHÂN TÁCH GIAI ĐOẠN VÀ KHÔNG GOM TOÀN BỘ QUY TRÌNH VÀO MỘT SPRINT TÍNH NĂNG:
-                               - Nếu người dùng yêu cầu chia nhỏ/bóc tách task cho một Sprint tính năng cụ thể (Ví dụ: "Sprint 7: Activity Log & Dashboard Thống kê Tiến độ"):
-                                 + BẮT BUỘC chỉ bóc tách các task phát triển nghiệp vụ trực tiếp cho tính năng đó (Xây dựng API Backend ghi/đọc dữ liệu, Xây dựng giao diện UI/Dashboard, Kết nối dữ liệu).
-                                 + TUYỆT ĐỐI KHÔNG đưa task "Thiết kế Schema CSDL nền tảng" (vì thuộc Sprint kiến trúc ban đầu) hay "Kiểm thử tự động E2E toàn hệ thống / Đóng gói CI/CD" (vì thuộc Sprint kiểm thử/triển khai sau như Sprint 8) vào Sprint tính năng này.
-                                 + Tuân thủ tính khả thi thực tế trong khung thời gian 1 Sprint (7 - 14 ngày).
+                            1. QUY TẮC BẮT BUỘC TUÂN THỦ BẢN KẾ HOẠCH MỚI NHẤT (LATEST DEMO PLAN):
+                               - Người dùng vừa duyệt kế hoạch! BẮT BUỘC bóc tách đúng số lượng Sprint và đúng tên/chủ đề các Sprint THEO BẢN KẾ HOẠCH GẦN NHẤT trong lịch sử đàm thoại (hoặc theo đúng tin nhắn duyệt mới nhất của người dùng).
+                               - NẾU người dùng đã yêu cầu thêm Sprint (ví dụ thành 4 Sprint, 5 Sprint) và bản kế hoạch gần nhất có 4 hoặc 5 Sprint: BẮT BUỘC phải phân rã ĐỦ 4 hoặc 5 Sprint đó! TUYỆT ĐỐI KHÔNG ĐƯỢC QUAY LẠI 3 SPRINT CŨ!
+                               - BẮT BUỘC phải có Sprint Kiểm Thử Hệ Thống (QA / Testing / Test Cases / UAT / Tích hợp) theo đúng quy trình phần mềm!
+                            2. QUY TẮC ĐỌC KỸ THÔNG TIN TÀI LIỆU NẠP VÀO:
+                               - NẾU tài liệu đề tài nêu team có 2 người làm: BẮT BUỘC chỉ phân bổ công việc cho 2 thành viên đó (ví dụ Thành viên 1, Thành viên 2 hoặc các vai trò phù hợp cho 2 người), KHÔNG BỊA RA 4 hay 5 người.
+                               - Đọc kỹ toàn bộ phạm vi nghiệp vụ trong tài liệu để không bỏ sót tính năng.
+                            3. QUY TẮC THỜI LƯỢNG SPRINT:
+                               - Mặc định 1 Sprint kéo dài 1 TUẦN (7 ngày). Chỉ Sprint có module cực kỳ phức tạp mới 2 TUẦN (14 ngày).
+                               - TỔNG THỜI GIAN CÁC SPRINT PHẢI NẰM GỌN TRONG TỔNG SỐ NGÀY NGƯỜI DÙNG ĐÃ CẤU HÌNH.
+                            4. QUY TẮC PHÂN BỔ THỜI GIAN ESTIMATED DAYS KHOA HỌC THEO ĐỘ PHỨC TẠP (COMPLEXITY MATRIX):
+                               - TUYỆT ĐỐI KHÔNG CÀO BẰNG MỌI TASK ĐỀU 2-3 NGÀY! Thời gian ước lượng (estimatedDays) BẮT BUỘC phải dựa theo bản chất kỹ thuật của từng task:
+                                 + Task Đơn Giản (Priority LOW: Cấu hình môi trường, DTO/Entity, SQL Migration, Viết tài liệu Swagger, Sửa UI text): 0.5 - 1 ngày.
+                                 + Task Trung Bình (Priority MEDIUM: Nghiệp vụ CRUD Service, Form UI Validation, Tích hợp Redux/Zustand state, Email thông báo): 1.5 - 2 ngày.
+                                 + Task Phức Tạp / Nòng Cốt (Priority HIGH / URGENT: Kiến trúc JWT/OAuth2, Cổng thanh toán IPN, Xử lý WebSocket Realtime, Tối ưu Index CSDL, Kiểm thử E2E): 2.5 - 4 ngày.
+                            5. BẢO TOÀN DUNG LƯỢNG TASK: Bóc tách chi tiết đầy đủ từ 15 đến 25+ Tasks cho toàn bộ các Sprint đã thống nhất.
+                            6. ĐÁNH GIÁ RỦI RO THEO BẰNG CHỨNG BENCHMARK THỰC TẾ: Các cảnh báo rủi ro ('riskWarning') phải trích dẫn căn cứ thực tế (Ví dụ: Tiêu chuẩn ISO/IEC 25010, IEEE 12207, OWASP Top 10).
                             %s
 
                             ĐÂY LÀ MẪU RAG THAM KHẢO CẤU TRÚC (%s):
@@ -528,10 +560,10 @@ public class AiServiceImpl implements AiService {
                                   "title": "Tên task ngắn gọn rõ ràng",
                                   "description": "Mô tả công việc chi tiết",
                                   "priority": "HIGH / MEDIUM / LOW / URGENT",
-                                  "estimatedDays": 3,
-                                  "bufferDays": 1,
+                                  "estimatedDays": 1.5,
+                                  "bufferDays": 0,
                                   "assignedRole": "Backend Developer / Frontend Developer / QA Lead / DevOps / System Architect",
-                                  "suggestedMemberName": "Tên thành viên chính xác trích xuất từ tài liệu/lời nhắn (hoặc Thành viên 1, Thành viên 2 nếu chỉ có số lượng)",
+                                  "suggestedMemberName": "Tên thành viên chính xác trích xuất từ tài liệu/lời nhắn (hoặc Thành viên 1, Thành viên 2 nếu chỉ có sô lượng)",
                                   "riskWarning": "Cảnh báo rủi ro có căn cứ benchmark thực tế (Chỉ điền nếu URGENT/HIGH, để null nếu bình thường)"
                                 }
                               ]
@@ -1187,8 +1219,7 @@ public class AiServiceImpl implements AiService {
                 metadata.put("type", "HARVESTED_SPACE");
                 org.springframework.ai.document.Document doc = new org.springframework.ai.document.Document(
                         sample.getTitle() + " - " + sample.getRequirementText(),
-                        metadata
-                );
+                        metadata);
                 vectorStoreService.ingestDocuments(List.of(doc));
             } catch (Exception e) {
                 log.warn("Could not ingest harvested space into Vector Store: {}", e.getMessage());
