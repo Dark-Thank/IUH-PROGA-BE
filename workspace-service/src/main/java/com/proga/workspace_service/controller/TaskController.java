@@ -71,6 +71,12 @@ public class TaskController {
         return ResponseEntity.ok(ApiResponse.success("Tasks deleted successfully", null));
     }
 
+    @PostMapping("/batch-assign")
+    public ResponseEntity<ApiResponse<Void>> assignTasksBatch(@RequestBody com.proga.workspace_service.dto.BatchAssignTaskRequest request) {
+        taskService.assignTasksBatch(request.getAssignments());
+        return ResponseEntity.ok(ApiResponse.success("Tasks assigned successfully", null));
+    }
+
     @GetMapping("/space/{spaceId}/trash")
     public ResponseEntity<ApiResponse<List<TaskResponse>>> getDeletedTasksBySpace(@PathVariable long spaceId) {
         return ResponseEntity.ok(ApiResponse.success(taskService.getDeletedTasksBySpace(spaceId)));

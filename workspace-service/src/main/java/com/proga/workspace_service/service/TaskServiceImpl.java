@@ -80,7 +80,11 @@ public class TaskServiceImpl implements TaskService {
         task.setDescription(request.getDescription());
         if (request.getStatus() != null) task.setStatus(request.getStatus());
         if (request.getPriority() != null) task.setPriority(request.getPriority());
-        if (request.getOwnerId() != null) task.setOwnerId(request.getOwnerId());
+        if (request.getOwnerId() == null || request.getOwnerId() <= 0) {
+            task.setOwnerId(null);
+        } else {
+            task.setOwnerId(request.getOwnerId());
+        }
         task.setStartDate(request.getStartDate());
         task.setDueDate(request.getDueDate());
 
@@ -134,6 +138,29 @@ public class TaskServiceImpl implements TaskService {
 
         for (Task t : tasks) {
             notifyWebsocket(t.getSpaceId(), "DELETE", mapToResponse(t));
+        }
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void assignTasksBatch(List<com.proga.workspace_service.dto.BatchAssignTaskRequest.AssignItem> assignments) {
+        if (assignments == null || assignments.isEmpty()) return;
+        Map<Long, Long> map = assignments.stream()
+                .filter(a -> a.getTaskId() != null && a.getOwnerId() != null)
+                .collect(Collectors.toMap(
+                        com.proga.workspace_service.dto.BatchAssignTaskRequest.AssignItem::getTaskId,
+                        com.proga.workspace_service.dto.BatchAssignTaskRequest.AssignItem::getOwnerId,
+                        (k1, k2) -> k2
+                ));
+
+        List<Task> tasks = taskRepository.findAllById(map.keySet());
+        for (Task t : tasks) {
+            Long newOwnerId = map.get(t.getId());
+            t.setOwnerId(newOwnerId);
+        }
+        List<Task> savedTasks = taskRepository.saveAll(tasks);
+        for (Task t : savedTasks) {
+            notifyWebsocket(t.getSpaceId(), "UPDATE", mapToResponse(t));
         }
     }
 

@@ -32,4 +32,6 @@ public interface TaskService {
     void permanentDeleteTask(long id);
 
     void purgeExpiredDeletedTasks();
+
+    void assignTasksBatch(List<com.proga.workspace_service.dto.BatchAssignTaskRequest.AssignItem> assignments);
 }
