@@ -14,4 +14,5 @@ public interface SprintService {
     SprintResponse updateSprint(long id, SprintRequest request);
     SprintResponse updateSprintStatus(long id, SprintStatus status);
     void deleteSprint(long id);
+    void deleteSprint(long id, boolean deleteTasks);
 }

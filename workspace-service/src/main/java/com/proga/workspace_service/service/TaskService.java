@@ -22,4 +22,6 @@ public interface TaskService {
     TaskResponse updateTaskStatus(long id, TaskStatus status);
 
     void deleteTask(long id);
+
+    void deleteTasksBatch(List<Long> taskIds);
 }
