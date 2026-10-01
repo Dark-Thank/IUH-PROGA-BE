@@ -44,35 +44,35 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public TaskResponse getTaskById(long id) {
-        Task task = taskRepository.findById(id)
+        Task task = taskRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
         return mapToResponse(task);
     }
 
     @Override
     public List<TaskResponse> getTasksBySpace(long spaceId) {
-        return taskRepository.findBySpaceId(spaceId).stream()
+        return taskRepository.findBySpaceIdAndIsDeletedFalse(spaceId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<TaskResponse> getTasksBySprint(long sprintId) {
-        return taskRepository.findBySprintId(sprintId).stream()
+        return taskRepository.findBySprintIdAndIsDeletedFalse(sprintId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<TaskResponse> getTasksByOwner(long ownerId) {
-        return taskRepository.findByOwnerId(ownerId).stream()
+        return taskRepository.findByOwnerIdAndIsDeletedFalse(ownerId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
     public TaskResponse updateTask(long id, TaskRequest request) {
-        Task task = taskRepository.findById(id)
+        Task task = taskRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
 
         task.setTitle(request.getTitle());
@@ -92,7 +92,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public TaskResponse updateTaskStatus(long id, TaskStatus status) {
-        Task task = taskRepository.findById(id)
+        Task task = taskRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
         task.setStatus(status);
         Task updated = taskRepository.save(task);
@@ -103,12 +103,16 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public void deleteTask(long id) {
-        Task task = taskRepository.findById(id)
+        Task task = taskRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
         validateTaskDeletion(task);
-        long spaceId = task.getSpaceId();
-        TaskResponse response = mapToResponse(task);
-        taskRepository.deleteById(id);
+
+        task.setDeleted(true);
+        task.setDeletedAt(java.time.LocalDateTime.now());
+        Task saved = taskRepository.save(task);
+
+        long spaceId = saved.getSpaceId();
+        TaskResponse response = mapToResponse(saved);
         notifyWebsocket(spaceId, "DELETE", response);
     }
 
@@ -116,13 +120,63 @@ public class TaskServiceImpl implements TaskService {
     @org.springframework.transaction.annotation.Transactional
     public void deleteTasksBatch(List<Long> ids) {
         if (ids == null || ids.isEmpty()) return;
-        List<Task> tasks = taskRepository.findAllById(ids);
+        List<Task> tasks = taskRepository.findAllById(ids).stream()
+                .filter(t -> !t.isDeleted())
+                .collect(Collectors.toList());
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
         for (Task t : tasks) {
             validateTaskDeletion(t);
+            t.setDeleted(true);
+            t.setDeletedAt(now);
         }
-        taskRepository.deleteAll(tasks);
+        taskRepository.saveAll(tasks);
+
         for (Task t : tasks) {
             notifyWebsocket(t.getSpaceId(), "DELETE", mapToResponse(t));
+        }
+    }
+
+    @Override
+    public List<TaskResponse> getDeletedTasksBySpace(long spaceId) {
+        return taskRepository.findBySpaceIdAndIsDeletedTrueOrderByDeletedAtDesc(spaceId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public TaskResponse restoreTask(long id) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+        if (!task.isDeleted()) {
+            return mapToResponse(task);
+        }
+        task.setDeleted(false);
+        task.setDeletedAt(null);
+        Task saved = taskRepository.save(task);
+        TaskResponse response = mapToResponse(saved);
+        notifyWebsocket(saved.getSpaceId(), "RESTORE", response);
+        return response;
+    }
+
+    @Override
+    public void permanentDeleteTask(long id) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+        taskRepository.deleteById(id);
+        notifyWebsocket(task.getSpaceId(), "PERMANENT_DELETE", mapToResponse(task));
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void purgeExpiredDeletedTasks() {
+        java.time.LocalDateTime threshold = java.time.LocalDateTime.now().minusDays(15);
+        List<Task> expiredTasks = taskRepository.findByIsDeletedTrueAndDeletedAtBefore(threshold);
+        if (!expiredTasks.isEmpty()) {
+            taskRepository.deleteAll(expiredTasks);
+            for (Task t : expiredTasks) {
+                notifyWebsocket(t.getSpaceId(), "PERMANENT_DELETE", mapToResponse(t));
+            }
         }
     }
 
@@ -168,6 +222,8 @@ public class TaskServiceImpl implements TaskService {
                 .startDate(task.getStartDate())
                 .dueDate(task.getDueDate())
                 .createdAt(task.getCreatedAt())
+                .isDeleted(task.isDeleted())
+                .deletedAt(task.getDeletedAt())
                 .build();
     }
 }

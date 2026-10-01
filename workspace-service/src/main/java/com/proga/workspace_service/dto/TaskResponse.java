@@ -23,4 +23,6 @@ public class TaskResponse {
     private LocalDateTime startDate;
     private LocalDateTime dueDate;
     private LocalDateTime createdAt;
+    private boolean isDeleted;
+    private LocalDateTime deletedAt;
 }

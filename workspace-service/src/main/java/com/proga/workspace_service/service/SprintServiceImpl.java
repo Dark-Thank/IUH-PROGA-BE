@@ -93,7 +93,12 @@ public class SprintServiceImpl implements SprintService {
 
         java.util.List<com.proga.workspace_service.model.Task> sprintTasks = taskRepository.findBySprintId(id);
         if (deleteTasks) {
-            taskRepository.deleteAll(sprintTasks);
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            for (com.proga.workspace_service.model.Task t : sprintTasks) {
+                t.setDeleted(true);
+                t.setDeletedAt(now);
+            }
+            taskRepository.saveAll(sprintTasks);
         } else {
             for (com.proga.workspace_service.model.Task t : sprintTasks) {
                 t.setSprintId(null);

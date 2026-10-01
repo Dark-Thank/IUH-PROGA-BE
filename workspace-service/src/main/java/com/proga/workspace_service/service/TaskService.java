@@ -24,4 +24,12 @@ public interface TaskService {
     void deleteTask(long id);
 
     void deleteTasksBatch(List<Long> taskIds);
+
+    List<TaskResponse> getDeletedTasksBySpace(long spaceId);
+
+    TaskResponse restoreTask(long id);
+
+    void permanentDeleteTask(long id);
+
+    void purgeExpiredDeletedTasks();
 }
