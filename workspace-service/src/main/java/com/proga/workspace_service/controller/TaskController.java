@@ -64,4 +64,10 @@ public class TaskController {
         taskService.deleteTask(id);
         return ResponseEntity.ok(ApiResponse.success("Task deleted successfully", null));
     }
+
+    @PostMapping("/batch-delete")
+    public ResponseEntity<ApiResponse<Void>> deleteTasksBatch(@RequestBody com.proga.workspace_service.dto.BatchDeleteTaskRequest request) {
+        taskService.deleteTasksBatch(request.getTaskIds());
+        return ResponseEntity.ok(ApiResponse.success("Tasks deleted successfully", null));
+    }
 }

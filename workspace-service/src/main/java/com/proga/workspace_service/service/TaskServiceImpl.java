@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
+    private final com.proga.workspace_service.repository.SprintRepository sprintRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
@@ -104,10 +105,39 @@ public class TaskServiceImpl implements TaskService {
     public void deleteTask(long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+        validateTaskDeletion(task);
         long spaceId = task.getSpaceId();
         TaskResponse response = mapToResponse(task);
         taskRepository.deleteById(id);
         notifyWebsocket(spaceId, "DELETE", response);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteTasksBatch(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return;
+        List<Task> tasks = taskRepository.findAllById(ids);
+        for (Task t : tasks) {
+            validateTaskDeletion(t);
+        }
+        taskRepository.deleteAll(tasks);
+        for (Task t : tasks) {
+            notifyWebsocket(t.getSpaceId(), "DELETE", mapToResponse(t));
+        }
+    }
+
+    private void validateTaskDeletion(Task task) {
+        if (task.getSprintId() != null) {
+            com.proga.workspace_service.model.Sprint sprint = sprintRepository.findById(task.getSprintId()).orElse(null);
+            if (sprint != null) {
+                if (sprint.getStatus() == com.proga.workspace_service.model.SprintStatus.CLOSED) {
+                    throw new IllegalStateException("Không được phép xóa công việc trong Sprint đã đóng.");
+                }
+                if (sprint.getStatus() == com.proga.workspace_service.model.SprintStatus.ACTIVE && task.getStatus() != com.proga.workspace_service.model.TaskStatus.TODO) {
+                    throw new IllegalStateException("Trong Sprint đang diễn ra, chỉ được phép xóa các công việc ở trạng thái Cần làm (TODO).");
+                }
+            }
+        }
     }
 
     private void notifyWebsocket(long spaceId, String action, TaskResponse response) {

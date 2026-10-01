@@ -505,6 +505,11 @@ public class AiServiceImpl implements AiService {
                                - Mỗi Task phải nhỏ, đơn lẻ, dễ quản lý (Thời gian ước tính từ 1 - 3 ngày/task).
                                - Bóc tách chi tiết từ 15 đến 30+ Tasks bao quát đầy đủ các giai đoạn vòng đời.
                             7. ĐÁNH GIÁ RỦI RO THEO BẰNG CHỨNG BENCHMARK THỰC TẾ: Các cảnh báo rủi ro ('riskWarning') phải trích dẫn căn cứ thực tế (Ví dụ: Thông tư 46/2018/TT-BYT, Tiêu chuẩn NIST SP 800-38A, Tiêu chuẩn HLS RFC 8216, OWASP Top 10).
+                            8. QUY TẮC PHÂN TÁCH GIAI ĐOẠN VÀ KHÔNG GOM TOÀN BỘ QUY TRÌNH VÀO MỘT SPRINT TÍNH NĂNG:
+                               - Nếu người dùng yêu cầu chia nhỏ/bóc tách task cho một Sprint tính năng cụ thể (Ví dụ: "Sprint 7: Activity Log & Dashboard Thống kê Tiến độ"):
+                                 + BẮT BUỘC chỉ bóc tách các task phát triển nghiệp vụ trực tiếp cho tính năng đó (Xây dựng API Backend ghi/đọc dữ liệu, Xây dựng giao diện UI/Dashboard, Kết nối dữ liệu).
+                                 + TUYỆT ĐỐI KHÔNG đưa task "Thiết kế Schema CSDL nền tảng" (vì thuộc Sprint kiến trúc ban đầu) hay "Kiểm thử tự động E2E toàn hệ thống / Đóng gói CI/CD" (vì thuộc Sprint kiểm thử/triển khai sau như Sprint 8) vào Sprint tính năng này.
+                                 + Tuân thủ tính khả thi thực tế trong khung thời gian 1 Sprint (7 - 14 ngày).
                             %s
 
                             ĐÂY LÀ MẪU RAG THAM KHẢO CẤU TRÚC (%s):

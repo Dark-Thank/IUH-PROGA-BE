@@ -57,8 +57,10 @@ public class SprintController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteSprint(@PathVariable long id) {
-        sprintService.deleteSprint(id);
+    public ResponseEntity<ApiResponse<Void>> deleteSprint(
+            @PathVariable long id,
+            @RequestParam(defaultValue = "false") boolean deleteTasks) {
+        sprintService.deleteSprint(id, deleteTasks);
         return ResponseEntity.ok(ApiResponse.success("Sprint deleted successfully", null));
     }
 }
