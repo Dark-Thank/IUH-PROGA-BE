@@ -22,4 +22,16 @@ public interface TaskService {
     TaskResponse updateTaskStatus(long id, TaskStatus status);
 
     void deleteTask(long id);
+
+    void deleteTasksBatch(List<Long> taskIds);
+
+    List<TaskResponse> getDeletedTasksBySpace(long spaceId);
+
+    TaskResponse restoreTask(long id);
+
+    void permanentDeleteTask(long id);
+
+    void purgeExpiredDeletedTasks();
+
+    void assignTasksBatch(List<com.proga.workspace_service.dto.BatchAssignTaskRequest.AssignItem> assignments);
 }

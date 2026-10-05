@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public class SprintServiceImpl implements SprintService {
 
     private final SprintRepository sprintRepository;
+    private final com.proga.workspace_service.repository.TaskRepository taskRepository;
 
     @Override
     public SprintResponse createSprint(SprintRequest request) {
@@ -81,11 +82,36 @@ public class SprintServiceImpl implements SprintService {
     }
 
     @Override
-    public void deleteSprint(long id) {
-        if (!sprintRepository.existsById(id)) {
-            throw new RuntimeException("Sprint not found with id: " + id);
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteSprint(long id, boolean deleteTasks) {
+        Sprint sprint = sprintRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Sprint not found with id: " + id));
+
+        if (sprint.getStatus() == SprintStatus.CLOSED || sprint.getStatus() == SprintStatus.ACTIVE) {
+            throw new IllegalStateException("Không được phép xóa Sprint đã đóng hoặc Sprint đang diễn ra.");
+        }
+
+        java.util.List<com.proga.workspace_service.model.Task> sprintTasks = taskRepository.findBySprintId(id);
+        if (deleteTasks) {
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            for (com.proga.workspace_service.model.Task t : sprintTasks) {
+                t.setDeleted(true);
+                t.setDeletedAt(now);
+            }
+            taskRepository.saveAll(sprintTasks);
+        } else {
+            for (com.proga.workspace_service.model.Task t : sprintTasks) {
+                t.setSprintId(null);
+            }
+            taskRepository.saveAll(sprintTasks);
         }
         sprintRepository.deleteById(id);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteSprint(long id) {
+        deleteSprint(id, false);
     }
 
     private SprintResponse mapToResponse(Sprint sprint) {

@@ -51,4 +51,11 @@ public class Task {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }
