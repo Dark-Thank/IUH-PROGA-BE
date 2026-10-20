@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -145,18 +146,30 @@ public class TaskServiceImpl implements TaskService {
     @org.springframework.transaction.annotation.Transactional
     public void assignTasksBatch(List<com.proga.workspace_service.dto.BatchAssignTaskRequest.AssignItem> assignments) {
         if (assignments == null || assignments.isEmpty()) return;
-        Map<Long, Long> map = assignments.stream()
-                .filter(a -> a.getTaskId() != null && a.getOwnerId() != null)
+        Map<Long, com.proga.workspace_service.dto.BatchAssignTaskRequest.AssignItem> map = assignments.stream()
+                .filter(a -> a.getTaskId() != null)
                 .collect(Collectors.toMap(
                         com.proga.workspace_service.dto.BatchAssignTaskRequest.AssignItem::getTaskId,
-                        com.proga.workspace_service.dto.BatchAssignTaskRequest.AssignItem::getOwnerId,
+                        a -> a,
                         (k1, k2) -> k2
                 ));
 
         List<Task> tasks = taskRepository.findAllById(map.keySet());
         for (Task t : tasks) {
-            Long newOwnerId = map.get(t.getId());
-            t.setOwnerId(newOwnerId);
+            com.proga.workspace_service.dto.BatchAssignTaskRequest.AssignItem item = map.get(t.getId());
+            if (item != null) {
+                if (item.getOwnerId() != null) {
+                    t.setOwnerId(item.getOwnerId());
+                }
+                LocalDateTime start = item.getParsedStartDate();
+                if (start != null) {
+                    t.setStartDate(start);
+                }
+                LocalDateTime due = item.getParsedDueDate();
+                if (due != null) {
+                    t.setDueDate(due);
+                }
+            }
         }
         List<Task> savedTasks = taskRepository.saveAll(tasks);
         for (Task t : savedTasks) {
