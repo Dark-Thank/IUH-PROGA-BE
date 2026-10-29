@@ -6,7 +6,9 @@ import com.proga.workspace_service.model.Space;
 import com.proga.workspace_service.repository.SpaceMemberRepository;
 import com.proga.workspace_service.repository.SpaceRepository;
 import com.proga.workspace_service.repository.WorkspaceRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,17 +22,52 @@ public class SpaceServiceImpl implements SpaceService {
     private final SpaceRepository spaceRepository;
     private final SpaceMemberRepository spaceMemberRepository;
     private final WorkspaceRepository workspaceRepository;
+    private final JdbcTemplate jdbcTemplate;
+
+    @PostConstruct
+    public void ensureSpaceSchemaAndSequencesSynced() {
+        try {
+            jdbcTemplate.execute("ALTER TABLE spaces ADD COLUMN IF NOT EXISTS is_private BOOLEAN NOT NULL DEFAULT FALSE");
+            jdbcTemplate.execute("ALTER TABLE spaces ALTER COLUMN name TYPE VARCHAR(255)");
+            jdbcTemplate.execute("ALTER TABLE sprints ALTER COLUMN name TYPE VARCHAR(255)");
+            jdbcTemplate.execute("ALTER TABLE tasks ALTER COLUMN title TYPE VARCHAR(255)");
+            syncAllSequences();
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void syncAllSequences() {
+        String[] tables = {"workspaces", "spaces", "sprints", "tasks", "task_notes", "workspace_logs"};
+        for (String table : tables) {
+            try {
+                jdbcTemplate.execute(
+                        "SELECT setval(pg_get_serial_sequence('" + table + "', 'id'), COALESCE((SELECT MAX(id) FROM " + table + "), 1))"
+                );
+            } catch (Exception ignored) {
+            }
+        }
+    }
 
     @Override
     @Transactional
     public SpaceResponse createSpace(SpaceRequest request) {
-        if (spaceRepository.existsByNameAndWorkspaceId(request.getName(), request.getWorkspaceId())) {
-            throw new RuntimeException("Space with name '" + request.getName() + "' already exists in this workspace");
+        syncAllSequences();
+
+        String baseName = request.getName() != null ? request.getName().trim() : "Dự Án Mới";
+        if (baseName.length() > 90) {
+            baseName = baseName.substring(0, 90).trim();
+        }
+
+        String finalName = baseName;
+        int suffix = 2;
+        while (spaceRepository.existsByNameAndWorkspaceId(finalName, request.getWorkspaceId())) {
+            finalName = baseName + " (" + suffix + ")";
+            suffix++;
         }
 
         Space space = Space.builder()
                 .workspaceId(request.getWorkspaceId())
-                .name(request.getName())
+                .name(finalName)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .isPrivate(request.getIsPrivate() != null ? request.getIsPrivate() : false)
@@ -72,24 +109,20 @@ public class SpaceServiceImpl implements SpaceService {
         List<Space> allSpaces = spaceRepository.findByWorkspaceId(workspaceId);
 
         if (userId == null) {
-            // Default filter out private spaces when no userId is passed
             return allSpaces.stream()
                     .filter(s -> s.getIsPrivate() == null || !s.getIsPrivate())
                     .map(this::mapToResponse)
                     .collect(Collectors.toList());
         }
 
-        // Check if user is Workspace Owner
         boolean isOwner = workspaceRepository.findById(workspaceId)
                 .map(w -> w.getOwnerId() == userId)
                 .orElse(false);
 
         if (isOwner) {
-            // Owner sees all spaces
             return allSpaces.stream().map(this::mapToResponse).collect(Collectors.toList());
         }
 
-        // Get user's space memberships
         List<Long> memberSpaceIds = spaceMemberRepository.findByIdUserId(userId).stream()
                 .map(sm -> sm.getId().getSpaceId())
                 .collect(Collectors.toList());
@@ -127,11 +160,18 @@ public class SpaceServiceImpl implements SpaceService {
         Space space = spaceRepository.findById(spaceId)
                 .orElseThrow(() -> new RuntimeException("Space not found with id: " + spaceId));
 
+        boolean isWsOwner = workspaceRepository.findById(space.getWorkspaceId())
+                .map(w -> w.getOwnerId() == userId)
+                .orElse(false);
+
+        // Mỗi Space chỉ có duy nhất 1 PM (Owner). Thành viên khác chỉ là ASSISTANT (4) hoặc MEMBER (3).
+        long normalizedRole = isWsOwner ? 2L : (roleId == 4L ? 4L : 3L);
+
         com.proga.workspace_service.model.SpaceMemberId memberId = new com.proga.workspace_service.model.SpaceMemberId(spaceId, userId);
         com.proga.workspace_service.model.SpaceMember member = com.proga.workspace_service.model.SpaceMember.builder()
                 .id(memberId)
                 .space(space)
-                .roleId(roleId)
+                .roleId(normalizedRole)
                 .build();
         spaceMemberRepository.save(member);
     }
@@ -142,13 +182,21 @@ public class SpaceServiceImpl implements SpaceService {
         Space space = spaceRepository.findById(spaceId)
                 .orElseThrow(() -> new RuntimeException("Space not found with id: " + spaceId));
 
+        boolean isWsOwner = workspaceRepository.findById(space.getWorkspaceId())
+                .map(w -> w.getOwnerId() == userId)
+                .orElse(false);
+
+        // Mỗi Space chỉ có duy nhất 1 PM (Owner). Thành viên khác chỉ được gán ASSISTANT (4) hoặc MEMBER (3).
+        long normalizedRole = isWsOwner ? 2L : (roleId == 4L ? 4L : 3L);
+
         com.proga.workspace_service.model.SpaceMemberId memberId = new com.proga.workspace_service.model.SpaceMemberId(spaceId, userId);
         com.proga.workspace_service.model.SpaceMember member = spaceMemberRepository.findById(memberId)
                 .orElseGet(() -> com.proga.workspace_service.model.SpaceMember.builder()
                         .id(memberId)
                         .space(space)
                         .build());
-        member.setRoleId(roleId);
+
+        member.setRoleId(normalizedRole);
         spaceMemberRepository.save(member);
     }
 

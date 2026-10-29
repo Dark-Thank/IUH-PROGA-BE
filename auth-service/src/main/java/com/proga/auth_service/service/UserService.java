@@ -1,5 +1,6 @@
 package com.proga.auth_service.service;
 
+import com.proga.auth_service.dto.UpdateUserProfileRequest;
 import com.proga.auth_service.dto.UserResponse;
 
 import java.util.List;
@@ -10,4 +11,6 @@ public interface UserService {
     UserResponse getUserById(long id);
 
     List<UserResponse> searchUsers(String query);
+
+    UserResponse updateUserProfile(long id, UpdateUserProfileRequest request);
 }

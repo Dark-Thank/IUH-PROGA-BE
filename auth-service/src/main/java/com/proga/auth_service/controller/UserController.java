@@ -1,6 +1,7 @@
 package com.proga.auth_service.controller;
 
 import com.proga.auth_service.dto.ApiResponse;
+import com.proga.auth_service.dto.UpdateUserProfileRequest;
 import com.proga.auth_service.dto.UserResponse;
 import com.proga.auth_service.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -29,5 +30,13 @@ public class UserController {
     @GetMapping("/{id:\\d+}")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable long id) {
         return ResponseEntity.ok(ApiResponse.success(userService.getUserById(id)));
+    }
+
+    @PutMapping("/{id:\\d+}")
+    public ResponseEntity<ApiResponse<UserResponse>> updateUserProfile(
+            @PathVariable long id,
+            @RequestBody UpdateUserProfileRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("User profile updated successfully",
+                userService.updateUserProfile(id, request)));
     }
 }

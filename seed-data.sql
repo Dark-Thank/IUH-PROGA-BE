@@ -228,16 +228,16 @@ INSERT INTO spaces (id, workspace_id, name, start_date, end_date, is_private, cr
 (12, 9, 'Dự Án Nền Tảng Học Trực Tuyến E-Learning LMS', '2026-08-15 08:00:00', '2026-11-30 18:00:00', false, NOW())
 ON CONFLICT (id) DO NOTHING;
 
--- 2.4. Chèn Space Members với Ma trận 3 Vai trò:
---      role_id = 2: PM (Lead PM / PM Phụ duyệt task DONE)
+-- 2.4. Chèn Space Members với Ma trận 3 Vai trò (Mỗi Space chỉ có duy nhất 1 PM):
+--      role_id = 2: PM (Duy nhất 1 PM tạo/sở hữu Space - giữ quyền duyệt task DONE)
 --      role_id = 4: ASSISTANT (Trợ lý điều phối, nạp tài liệu AI nháp, sửa hạn chót, kéo Kanban nhưng không duyệt DONE)
 --      role_id = 3: MEMBER (Thành viên thực thi mặc định, chuyển task sang IN_REVIEW chờ PM duyệt)
 INSERT INTO space_members (space_id, user_id, role_id, joined_at) VALUES
--- Space 1: Dự Án Khóa Luận Tốt Nghiệp IUH-PROGA (Đầy đủ 9 thành viên với 3 tầng vai trò rõ nét)
-(1, 2, 2, NOW()),  -- Lưu Ngọc Cao Sơn: Lead PM (Người tạo Space)
-(1, 8, 2, NOW()),  -- Trần Đỗ Đăng Khánh: PM Phụ (PM Backend & DevOps - cùng duyệt task)
+-- Space 1: Dự Án Khóa Luận Tốt Nghiệp IUH-PROGA (1 PM duy nhất + ASSISTANT + MEMBER)
+(1, 2, 2, NOW()),  -- Lưu Ngọc Cao Sơn: PM duy nhất của Space (Người tạo Space)
+(1, 8, 4, NOW()),  -- Trần Đỗ Đăng Khánh: ASSISTANT (Tech Lead hỗ trợ điều phối)
 (1, 7, 4, NOW()),  -- Lê Anh Tuấn: ASSISTANT (BA - Trợ lý điều phối & nạp tài liệu AI phân rã nháp)
-(1, 5, 4, NOW()),  -- Nguyễn Hòa: ASSISTANT (QA Coordinator - Trợ lý điều phối & kiểm tra chất lượng)
+(1, 5, 4, NOW()),  -- Nguyễn Hòa: ASSISTANT (QA Coordinator - Trợ lý điều phối)
 (1, 4, 3, NOW()),  -- Trần Duy: MEMBER (Fullstack Developer)
 (1, 6, 3, NOW()),  -- Vũ Minh Trí: MEMBER (Backend Developer)
 (1, 9, 3, NOW()),  -- Phạm Hoàng Nam: MEMBER (Frontend Developer)
@@ -245,7 +245,7 @@ INSERT INTO space_members (space_id, user_id, role_id, joined_at) VALUES
 (1, 11, 3, NOW()), -- Ngô Quốc Bảo: MEMBER (DevOps Engineer)
 
 -- Space 2: Dự Án Quản Lý Ký Túc Xá Sinh Viên IUH
-(2, 2, 2, NOW()),  -- Cao Sơn (Lead PM)
+(2, 2, 2, NOW()),  -- Cao Sơn (PM duy nhất)
 (2, 7, 4, NOW()),  -- Anh Tuấn (ASSISTANT)
 (2, 4, 3, NOW()),  -- Trần Duy (MEMBER)
 (2, 9, 3, NOW()),  -- Hoàng Nam (MEMBER)
@@ -253,12 +253,12 @@ INSERT INTO space_members (space_id, user_id, role_id, joined_at) VALUES
 
 -- Space 3: Dự Án Đăng Ký Tín Chỉ (Private)
 (3, 2, 2, NOW()),
-(3, 8, 2, NOW()),
+(3, 8, 4, NOW()),
 (3, 6, 3, NOW()),
 
 -- Space 4: Dự Án Sàn Thương Mại Điện Tử Microservices
-(4, 3, 2, NOW()),  -- Lân Anh (Lead PM)
-(4, 2, 2, NOW()),  -- Cao Sơn (PM Phụ Kỹ thuật)
+(4, 3, 2, NOW()),  -- Lân Anh (PM duy nhất)
+(4, 2, 4, NOW()),  -- Cao Sơn (ASSISTANT)
 (4, 7, 4, NOW()),  -- Anh Tuấn (ASSISTANT)
 (4, 4, 3, NOW()),  -- Trần Duy (MEMBER)
 (4, 6, 3, NOW()),  -- Minh Trí (MEMBER)
@@ -268,15 +268,15 @@ INSERT INTO space_members (space_id, user_id, role_id, joined_at) VALUES
 -- Space 5..12
 (5, 3, 2, NOW()),
 (5, 4, 3, NOW()),
-(6, 8, 2, NOW()),  -- Đăng Khánh (Lead PM)
-(6, 2, 2, NOW()),  -- Cao Sơn (PM Phụ AI & Mobile)
+(6, 8, 2, NOW()),  -- Đăng Khánh (PM duy nhất)
+(6, 2, 4, NOW()),  -- Cao Sơn (ASSISTANT)
 (6, 5, 4, NOW()),  -- Nguyễn Hòa (ASSISTANT)
 (6, 4, 3, NOW()),  -- Trần Duy (MEMBER)
 (6, 6, 3, NOW()),  -- Minh Trí (MEMBER)
 (7, 8, 2, NOW()),
 (8, 3, 2, NOW()),
 (9, 2, 2, NOW()),
-(9, 10, 2, NOW()),
+(9, 10, 4, NOW()),
 (9, 7, 4, NOW()),
 (9, 6, 3, NOW()),
 (10, 2, 2, NOW()),
