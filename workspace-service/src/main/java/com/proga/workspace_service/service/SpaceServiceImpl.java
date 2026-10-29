@@ -128,7 +128,7 @@ public class SpaceServiceImpl implements SpaceService {
                 .collect(Collectors.toList());
 
         return allSpaces.stream()
-                .filter(s -> s.getIsPrivate() == null || !s.getIsPrivate() || memberSpaceIds.contains(s.getId()))
+                .filter(s -> memberSpaceIds.contains(s.getId()))
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
