@@ -22,6 +22,7 @@ public class SpaceServiceImpl implements SpaceService {
     private final WorkspaceRepository workspaceRepository;
 
     @Override
+    @Transactional
     public SpaceResponse createSpace(SpaceRequest request) {
         if (spaceRepository.existsByNameAndWorkspaceId(request.getName(), request.getWorkspaceId())) {
             throw new RuntimeException("Space with name '" + request.getName() + "' already exists in this workspace");
@@ -36,6 +37,20 @@ public class SpaceServiceImpl implements SpaceService {
                 .build();
 
         Space saved = spaceRepository.save(space);
+
+        workspaceRepository.findById(request.getWorkspaceId()).ifPresent(ws -> {
+            if (ws.getOwnerId() > 0) {
+                com.proga.workspace_service.model.SpaceMemberId ownerMemberId =
+                        new com.proga.workspace_service.model.SpaceMemberId(saved.getId(), ws.getOwnerId());
+                com.proga.workspace_service.model.SpaceMember ownerMember =
+                        com.proga.workspace_service.model.SpaceMember.builder()
+                                .id(ownerMemberId)
+                                .space(saved)
+                                .roleId(2L)
+                                .build();
+                spaceMemberRepository.save(ownerMember);
+            }
+        });
 
         return mapToResponse(saved);
     }
@@ -118,6 +133,22 @@ public class SpaceServiceImpl implements SpaceService {
                 .space(space)
                 .roleId(roleId)
                 .build();
+        spaceMemberRepository.save(member);
+    }
+
+    @Override
+    @Transactional
+    public void updateMemberRoleInSpace(long spaceId, long userId, long roleId) {
+        Space space = spaceRepository.findById(spaceId)
+                .orElseThrow(() -> new RuntimeException("Space not found with id: " + spaceId));
+
+        com.proga.workspace_service.model.SpaceMemberId memberId = new com.proga.workspace_service.model.SpaceMemberId(spaceId, userId);
+        com.proga.workspace_service.model.SpaceMember member = spaceMemberRepository.findById(memberId)
+                .orElseGet(() -> com.proga.workspace_service.model.SpaceMember.builder()
+                        .id(memberId)
+                        .space(space)
+                        .build());
+        member.setRoleId(roleId);
         spaceMemberRepository.save(member);
     }
 

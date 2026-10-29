@@ -58,6 +58,15 @@ public class SpaceController {
         return ResponseEntity.ok(ApiResponse.success("Member added to space successfully", null));
     }
 
+    @PutMapping("/{id}/members/{userId}/role")
+    public ResponseEntity<ApiResponse<Void>> updateMemberRoleInSpace(
+            @PathVariable long id,
+            @PathVariable long userId,
+            @RequestParam long roleId) {
+        spaceService.updateMemberRoleInSpace(id, userId, roleId);
+        return ResponseEntity.ok(ApiResponse.success("Member role updated in space successfully", null));
+    }
+
     @DeleteMapping("/{id}/members/{userId}")
     public ResponseEntity<ApiResponse<Void>> removeMemberFromSpace(
             @PathVariable long id,
