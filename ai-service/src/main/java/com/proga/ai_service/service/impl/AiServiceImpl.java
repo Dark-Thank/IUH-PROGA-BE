@@ -300,12 +300,19 @@ public class AiServiceImpl implements AiService {
 
         long userTurnCount = existingMsgs.stream().filter(m -> m.getSenderType() == SenderType.USER).count() + 1;
         String reqTextLower = request.getRequirementText().toLowerCase();
-        boolean isExplicitFinalize = reqTextLower.contains("chốt task") || reqTextLower.contains("tạo task")
+        boolean isDocumentUpload = reqTextLower.contains("[nạp tài liệu")
+                || reqTextLower.contains("tài liệu kế hoạch file")
+                || reqTextLower.contains("đính kèm tài liệu")
+                || reqTextLower.contains("báo cáo đồ án")
+                || reqTextLower.contains("khóa luận tốt nghiệp");
+
+        boolean isExplicitFinalize = !isDocumentUpload && (
+                reqTextLower.contains("chốt task") || reqTextLower.contains("tạo task")
                 || reqTextLower.contains("phân rã ngay") || reqTextLower.contains("bóc tách ngay")
-                || reqTextLower.contains("khởi tạo ngay") || reqTextLower.contains("đồng ý")
-                || reqTextLower.contains("chốt kế hoạch") || reqTextLower.contains("duyệt kế hoạch")
-                || reqTextLower.contains("thống nhất") || reqTextLower.contains("ok kế hoạch")
-                || reqTextLower.contains("duyệt") || reqTextLower.contains("chốt");
+                || reqTextLower.contains("khởi tạo ngay") || reqTextLower.contains("chốt kế hoạch")
+                || reqTextLower.contains("duyệt kế hoạch") || reqTextLower.contains("thống nhất")
+                || reqTextLower.contains("ok kế hoạch") || reqTextLower.contains("duyệt")
+                || reqTextLower.contains("chốt"));
 
         // Save User Prompt into Thread
         messageRepository.save(AiChatMessage.builder()
@@ -366,8 +373,14 @@ public class AiServiceImpl implements AiService {
         }
         historyBuilder.append("Người Dùng (Mới nhất): ").append(request.getRequirementText()).append("\n");
 
-        boolean isClarificationStage = !hasExistingDecomposedTasks && userTurnCount == 1 && !isExplicitFinalize;
-        boolean isDemoPlanStage = !hasExistingDecomposedTasks && !isClarificationStage && !isExplicitFinalize;
+        // On turn 1 (first user turn after uploading document or entering requirements),
+        // ALWAYS run Clarification Stage so AI is forced to ask clarifying questions about
+        // PM methodology, timeline, member count, and budget/costs.
+        boolean isExistingSpaceDecompose = request.getRequirementText().contains("[NGỮ CẢNH DỰ ÁN ĐANG DIỄN RA:")
+                || (request.getSpaceId() != null && request.getSpaceId() > 0 && !isDocumentUpload);
+
+        boolean isClarificationStage = !isExistingSpaceDecompose && !hasExistingDecomposedTasks && (userTurnCount == 1 || isDocumentUpload);
+        boolean isDemoPlanStage = !isExistingSpaceDecompose && !hasExistingDecomposedTasks && !isClarificationStage && !isExplicitFinalize;
         boolean isTaskModificationStage = hasExistingDecomposedTasks;
 
         String systemPrompt;
@@ -419,6 +432,55 @@ public class AiServiceImpl implements AiService {
                             """,
                     lastAssistantTaskJson, request.getRequirementText(), ragSourceRef, ragSourceUrl);
 
+        } else if (isExistingSpaceDecompose) {
+            // STAGE: DECOMPOSE TASKS DIRECTLY FOR AN ONGOING EXISTING SPACE
+            systemPrompt = String.format(
+                    """
+                            Bạn là Requirement Agent (Business Analyst / Product Owner) chuyên nghiệp của hệ thống PROGA.
+                            BẠN ĐANG LÀM VIỆC TRONG MỘT DỰ ÁN (SPACE) CỤ THỂ ĐANG DIỄN RA.
+                            TUYỆT ĐỐI KHÔNG HỎI CÁC CÂU HỎI KHẢO SÁT BAN ĐẦU (phương pháp Scrum/Waterfall, chi phí, số lượng thành viên) vì dự án đã được khởi tạo và đang vận hành!
+
+                            Ngữ cảnh dự án hiện tại và các yêu cầu ràng buộc:
+                            %s
+
+                            Yêu cầu bóc tách mới nhất của người dùng:
+                            "%s"
+
+                            Nhiệm vụ của bạn:
+                            1. TẬP TRUNG TỐI ĐA bóc tách các Task nghiệp vụ cụ thể đáp ứng yêu cầu của người dùng cho dự án này.
+                            2. Mỗi Task phải là một đầu việc chi tiết, thực tế, làm trong 1 - 3 ngày.
+                            3. Gán đúng Sprint theo yêu cầu người dùng hoặc theo ngữ cảnh các Sprint hiện có trong dự án:
+                               - Nếu người dùng yêu cầu thêm vào Sprint cụ thể (ví dụ: "Sprint 3" hoặc "Sprint 7"), BẮT BUỘC gán tên Sprint đó.
+                               - Nếu người dùng yêu cầu tạo Sprint mới, đặt tên Sprint nối tiếp bắt đầu từ Sprint tiếp theo.
+                            4. Đánh số thứ tự Task nối tiếp các Task hiện có trong Space, không tạo lại các tính năng đã hoàn thành.
+                            5. Gán vai trò (assignedRole), độ ưu tiên (priority: LOW, MEDIUM, HIGH, URGENT), estimatedDays (1-3 ngày), bufferDays (0-1 ngày), và riskWarning nếu có.
+                            6. Trả về isDataSufficient: true và danh sách tasks cụ thể để nạp trực tiếp vào Space.
+                            7. Trong trường summary: Trình bày tóm tắt ngắn gọn, chuyên nghiệp về các công việc mới được phân rã cho dự án.
+
+                            YÊU CẦU ĐỊNH DẠNG STRICT JSON:
+                            {
+                              "isDataSufficient": true,
+                              "suggestedSpaceName": "Tên dự án hiện tại",
+                              "summary": "Tóm tắt ngắn gọn các công việc mới phân rã cho dự án đang diễn ra",
+                              "sourceReference": "%s",
+                              "sourceUrl": "%s",
+                              "tasks": [
+                                {
+                                  "sprint": "Tên Sprint",
+                                  "title": "Tên task",
+                                  "description": "Mô tả chi tiết hạng mục công việc cần làm",
+                                  "priority": "HIGH",
+                                  "estimatedDays": 2,
+                                  "bufferDays": 1,
+                                  "assignedRole": "Backend Developer",
+                                  "suggestedMemberName": "",
+                                  "riskWarning": "Cảnh báo rủi ro (nếu có)"
+                                }
+                              ]
+                            }
+                            """,
+                    historyBuilder.toString(), request.getRequirementText(), ragSourceRef, ragSourceUrl);
+
         } else if (isClarificationStage) {
             // STAGE 1 (TURN 1): Mandatory Clarification Interview with Sample Answers
             String learnedSpaceNotice = isHarvestedSpace
@@ -430,24 +492,42 @@ public class AiServiceImpl implements AiService {
             systemPrompt = String.format(
                     """
                             Bạn là một Requirement Agent (Product Owner / Business Analyst Co-Pilot) chuyên nghiệp cho hệ thống PROGA.
-                            ĐÂY LÀ LƯỢT ĐÀM THOẠI LẦN THỨ 1 (Giai đoạn Phỏng vấn Nghiệp vụ ban đầu).
-                            DÙ NGƯỜI DÙNG ĐÃ GỬI MÔ TẢ DÀI HOẶC NẠP FILE KẾ HOẠCH, BẠN BẮT BUỘC THỰC HIỆN PHỎNG VẤN 1-2 CÂU HỎI LÀM RÕ TRƯỚC!
+                            ĐÂY LÀ LƯỢT ĐÀM THOẠI LẦN THỨ 1 (Giai đoạn Phỏng vấn & Khảo sát Quản lý Dự án ban đầu).
+                            CẢNH BÁO TỐI CAO: DÙ NGƯỜI DÙNG ĐÃ GỬI MÔ TẢ DÀI HOẶC NẠP TÀI LIỆU KẾ HOẠCH/SRS/BRD, BẠN BẮT BUỘC PHẢI HỎI VÀ ĐƯA RA CÁC OPTION LỰA CHỌN ĐỂ LÀM RÕ CÁC YẾU TỐ QUẢN LÝ DỰ ÁN NẾU CHƯA CÓ HOẶC CHƯA ĐẦY ĐỦ!
 
                             Nhiệm vụ của bạn:
-                            1. Đọc yêu cầu bài toán/file nạp vào. Chào người dùng ngắn gọn và ghi nhận đã nhận được bài toán/tài liệu.%s
-                            2. Đưa ra 1 - 2 câu hỏi nghiệp vụ làm rõ ngắn gọn, đơn giản, dễ hiểu.
-                            3. BẮT BUỘC KÈM GỢI Ý TRẢ LỜI MẪU CHO MỖI CÂU HỎI, TRÌNH BÀY RÕ RÀNG TỪNG DÒNG:
-                               Gợi ý trả lời mẫu:
-                               • Option A: [Mô tả lựa chọn A]
-                               • Option B: [Mô tả lựa chọn B]
-                            4. Gợi ý 1 Tên dự án phù hợp trong `suggestedSpaceName`.
-                            5. Trả về `isDataSufficient`: false và `tasks`: [] RỖNG NGUYÊN BẢN.
+                            1. Đọc yêu cầu bài toán / tài liệu nạp vào. Chào người dùng ngắn gọn và xác nhận đã tiếp nhận tài liệu đề tài.%s
+                            2. KIỂM TRA KỸ TÀI LIỆU VỀ 4 KHÍA CẠNH QUẢN LÝ DỰ ÁN SAU ĐÂY:
+                               - Khía cạnh 1: Phương pháp / Mô hình Quản lý Dự án (Agile/Scrum, Kanban, Waterfall, Hybrid...)
+                               - Khía cạnh 2: Thời gian & Tiến độ thực hiện (Dự kiến bao nhiêu tuần/tháng, bao nhiêu Sprint, thời lượng mỗi Sprint là 1 tuần hay 2 tuần)
+                               - Khía cạnh 3: Số lượng thành viên tham gia & Phân bổ vai trò (Quy mô team bao nhiêu người, vai trò nòng cốt Frontend / Backend / Tester / DevOps / Fullstack)
+                               - Khía cạnh 4: Chi phí / Ngân sách & Tài nguyên kỹ thuật (Mức ngân sách: Tiết kiệm tối ưu Open-Source / Cloud Free-tier, hay Tiêu chuẩn có Cloud Server trả phí / Enterprise)
+                            3. NẾU BẤT KỲ KHÍA CẠNH NÀO Ở TRÊN CHƯA ĐƯỢC NÊU RÕ TRONG TÀI LIỆU: BẮT BUỘC đặt câu hỏi phỏng vấn tương ứng (từ 2 đến 4 câu hỏi trọng tâm).
+                            4. QUY TẮC BẮT BUỘC ĐƯA RA CÁC OPTION TRẢ LỜI MẪU CHO MỖI CÂU HỎI:
+                               - Mỗi câu hỏi BẮT BUỘC phải đi kèm từ 2 đến 3 lựa chọn (Option A, Option B, Option C) thiết thực, khả thi và bám sát ngữ cảnh đề tài.
+                               - Trình bày rõ ràng theo định dạng từng dòng để giao diện người dùng tự động sinh nút bấm click chọn:
+                                 1. [Câu hỏi về Phương pháp quản lý & Mô hình dự án]
+                                 • Option A: [Mô tả chi tiết lựa chọn A, ví dụ: Agile/Scrum Sprint 1 tuần - bàn giao liên tục và linh hoạt]
+                                 • Option B: [Mô tả chi tiết lựa chọn B, ví dụ: Agile/Scrum Sprint 2 tuần - phù hợp module nghiên cứu sâu]
+                                 • Option C: [Mô tả chi tiết lựa chọn C, ví dụ: Kanban theo luồng công việc ưu tiên]
+
+                                 2. [Câu hỏi về Thời gian thực hiện & Số lượng thành viên]
+                                 • Option A: [Mô tả chi tiết lựa chọn A, ví dụ: Nhóm 2 người (1 Backend/DevOps + 1 Frontend/AI), triển khai trong 6 tuần]
+                                 • Option B: [Mô tả chi tiết lựa chọn B, ví dụ: Nhóm 3-4 người chuyên biệt, triển khai trong 8 tuần]
+
+                                 3. [Câu hỏi về Chi phí, Ngân sách hoặc Tài nguyên triển khai]
+                                 • Option A: [Mô tả chi tiết lựa chọn A, ví dụ: Tối ưu chi phí, sử dụng dịch vụ Cloud Free-Tier và nền tảng Open-source]
+                                 • Option B: [Mô tả chi tiết lựa chọn B, ví dụ: Triển khai môi trường Server nội bộ (On-premise / Local Docker)]
+                                 • Option C: [Mô tả chi tiết lựa chọn C, ví dụ: Sẵn sàng ngân sách cho Cloud Server riêng biệt và API trả phí]
+
+                            5. Gợi ý 1 Tên dự án phù hợp trong `suggestedSpaceName`.
+                            6. Trả về `isDataSufficient`: false và `tasks`: [] RỖNG NGUYÊN BẢN.
 
                             YÊU CẦU ĐỊNH DẠNG STRICT JSON:
                             {
                               "isDataSufficient": false,
                               "suggestedSpaceName": "Tên dự án gợi ý",
-                              "summary": "Lời chào + 1-2 câu hỏi phỏng vấn nghiệp vụ kèm gợi ý trả lời mẫu ngắn gọn",
+                              "summary": "Lời chào xác nhận tài liệu + Các câu hỏi làm rõ quản lý dự án (phương pháp, thời gian, số lượng thành viên, chi phí...) kèm các Option A, B, C mẫu rõ ràng từng dòng",
                               "sourceReference": "%s",
                               "sourceUrl": "%s",
                               "tasks": []
@@ -470,25 +550,37 @@ public class AiServiceImpl implements AiService {
                                - NẾU người dùng yêu cầu "thêm sprint" (ví dụ từ 3 Sprint thành 4 hay 5 Sprint), bạn BẮT BUỘC giữ nguyên tổng thời gian đã chọn, phân bổ và cân đối lại thời lượng các Sprint cho vừa vặn trong tổng số ngày đó!
                             2. QUY TRÌNH PHẦN MỀM CHUẨN (BẮT BUỘC PHẢI CÓ SPRINT KIỂM THỬ):
                                - Một dự án phần mềm theo chuẩn Agile/Scrum BẮT BUỘC phải có Sprint (hoặc giai đoạn) dành riêng cho KIỂM THỬ HỆ THỐNG (Testing, QA, Test Cases, UAT, Tích hợp hệ thống, Sửa lỗi và Đóng gói). TUYỆT ĐỐI KHÔNG ĐƯỢC BỎ QUA GIAI ĐOẠN KIỂM THỬ!
-                            3. ĐỌC KỸ TÀI LIỆU NẠP VÀO:
-                               - Đọc kỹ số lượng thành viên thực hiện được nêu trong tài liệu (ví dụ đề tài 2 người làm: phân bổ đúng cho 2 người, không bịa người thứ 3, thứ 4).
+                            3. ĐỌC KỸ TÀI LIỆU VÀ CÂU TRẢ LỜI CỦA NGƯỜI DÙNG:
+                               - Bám sát số lượng thành viên thực hiện, phương pháp quản lý, ngân sách và thời gian mà người dùng đã chọn (ví dụ đề tài 2 người làm: phân bổ đúng cho 2 người, không bịa người thứ 3, thứ 4).
+                            4. BẮT BUỘC LIỆT KÊ DANH SÁCH TASK TRONG TỪNG SPRINT:
+                               - Với MỖI Sprint, bạn BẮT BUỘC liệt kê từ 3 đến 5 Task công việc trọng tâm cụ thể theo định dạng thụt lề `  + Task: [Tên task cụ thể]`.
 
                             HÃY TRÌNH BÀY TRONG TRƯỜNG `summary` THEO ĐÚNG CẤU TRÚC:
                             **Tên Dự Án Gợi Ý**: [Tên dự án phù hợp]
-                            **Quy Mô Dự Kiến**: [Số lượng] Sprint (Mặc định 1 tuần/Sprint nhưng vẫn phải dựa vào độ phức tạp của các task trong sprint đó mà có thể kéo dài hoặc rút ngắn thời gian của 1 sprint) và phân bổ thành viên.
+                            **Quy Mô Dự Kiến**: [Số lượng] Sprint (Mặc định 1 tuần/Sprint nhưng dựa vào độ phức tạp của các task trong sprint đó mà có thể kéo dài hoặc rút ngắn thời gian của 1 sprint) và phân bổ thành viên.
                             **Căn Cứ Tiêu Chuẩn**: Scrum Guide, IEEE Std 12207 hoặc tiêu chuẩn chuyên ngành liên quan.
                             **Lộ Trình Các Sprints Dự Kiến**:
-                            - Sprint 1 (Tuần 1): [Mục tiêu và phạm vi công việc chính]
-                            - Sprint 2 (Tuần 2): [Mục tiêu và phạm vi công việc chính]
+                            - Sprint 1 (Tuần 1 - 7 ngày): [Mục tiêu và phạm vi công việc chính của Sprint 1]
+                              + Task: [Tên công việc cụ thể 1 của Sprint 1]
+                              + Task: [Tên công việc cụ thể 2 của Sprint 1]
+                              + Task: [Tên công việc cụ thể 3 của Sprint 1]
+                              + Task: [Tên công việc cụ thể 4 của Sprint 1]
+                            - Sprint 2 (Tuần 2 - 10 ngày): [Mục tiêu và phạm vi công việc chính của Sprint 2]
+                              + Task: [Tên công việc cụ thể 1 của Sprint 2]
+                              + Task: [Tên công việc cụ thể 2 của Sprint 2]
+                              + Task: [Tên công việc cụ thể 3 của Sprint 2]
                             ...
                             - Sprint cuối (Tuần ...): Kiểm thử hệ thống (QA/Testing/UAT), Tích hợp tổng thể và Đóng gói báo cáo bàn giao
+                              + Task: Viết kịch bản kiểm thử Test Cases & Kiểm thử tự động API
+                              + Task: Kiểm thử bảo mật, tải chịu lực và kiểm thử nghiệm thu UAT
+                              + Task: Đóng gói Docker, tài liệu kỹ thuật & hướng dẫn cài đặt bàn giao
 
                             **Xác Nhận Kế Hoạch**:
                             Bạn có đồng ý với khung kế hoạch dự kiến này không? Bạn có thể bấm nút duyệt ngay bên dưới hoặc yêu cầu điều chỉnh thêm.
 
                             YÊU CẦU:
                             - Tuyệt đối không dùng các biểu tượng emoji rối mắt như 📌, ⏱️, 🔗, 📋, ❓, 👉 ở đầu dòng.
-                            - Cấu trúc các dòng Sprint chuẩn xác theo định dạng: `- Sprint X (Tuần X): [Mô tả]` để hệ thống tự động bóc tách thành thẻ kế hoạch trực quan.
+                            - Cấu trúc các dòng Sprint chuẩn xác theo định dạng: `- Sprint X (Tuần X - Y ngày): [Mô tả]` và các task con theo định dạng `  + Task: [Tên task]` để hệ thống tự động bóc tách thành danh sách task có thể đóng/mở và chỉnh sửa trực quan. Phân chia số ngày hợp lý cho từng sprint (7 - 14 ngày tùy độ phức tạp).
                             - Trả về `isDataSufficient`: false và `tasks`: [] RỖNG NGUYÊN BẢN.
 
                             YÊU CẦU ĐỊNH DẠNG STRICT JSON:
@@ -525,9 +617,11 @@ public class AiServiceImpl implements AiService {
                             ĐÂY LÀ GIAI ĐOẠN PHÂN RÃ CHI TIẾT BẢNG TASK WBS (Người dùng đã chốt/đồng ý kế hoạch demo).
 
                             CẢNH BÁO TỐI CAO VỀ BÀI TOÁN & QUY TRÌNH PHÂN RÃ CHI TIẾT:
-                            1. QUY TẮC BẮT BUỘC TUÂN THỦ BẢN KẾ HOẠCH MỚI NHẤT (LATEST DEMO PLAN):
-                               - Người dùng vừa duyệt kế hoạch! BẮT BUỘC bóc tách đúng số lượng Sprint và đúng tên/chủ đề các Sprint THEO BẢN KẾ HOẠCH GẦN NHẤT trong lịch sử đàm thoại (hoặc theo đúng tin nhắn duyệt mới nhất của người dùng).
-                               - NẾU người dùng đã yêu cầu thêm Sprint (ví dụ thành 4 Sprint, 5 Sprint) và bản kế hoạch gần nhất có 4 hoặc 5 Sprint: BẮT BUỘC phải phân rã ĐỦ 4 hoặc 5 Sprint đó! TUYỆT ĐỐI KHÔNG ĐƯỢC QUAY LẠI 3 SPRINT CŨ!
+                            1. QUY TẮC BẢO TOÀN TUYỆT ĐỐI TOÀN BỘ CÁC TASK TỪ BẢN KẾ HOẠCH DEMO ĐÃ DUYỆT:
+                               - Người dùng vừa duyệt kế hoạch demo! Trong tin nhắn duyệt, người dùng đã gửi danh sách chi tiết các Sprint và toàn bộ từng Task cụ thể (`Task X.Y: [Tên task]`).
+                               - BẮT BUỘC giữ nguyên 100% các Sprint và TẤT CẢ các Task đã có trong bản demo đó!
+                               - MỖI task trong bản demo BẮT BUỘC phải trở thành một task trong mảng `tasks` của JSON kết quả, giữ đúng tên task và Sprint tương ứng!
+                               - TUYỆT ĐỐI KHÔNG ĐƯỢC TỰ Ý BỎ SÓT TASK NÀO ĐÃ CÓ TRONG BẢN DEMO! Bạn có thể bổ sung thêm các sub-task kỹ thuật nếu cần, nhưng các task gốc từ bản demo PHẢI XUẤT HIỆN ĐỦ trong kết quả.
                                - BẮT BUỘC phải có Sprint Kiểm Thử Hệ Thống (QA / Testing / Test Cases / UAT / Tích hợp) theo đúng quy trình phần mềm!
                             2. QUY TẮC ĐỌC KỸ THÔNG TIN TÀI LIỆU NẠP VÀO:
                                - NẾU tài liệu đề tài nêu team có 2 người làm: BẮT BUỘC chỉ phân bổ công việc cho 2 thành viên đó (ví dụ Thành viên 1, Thành viên 2 hoặc các vai trò phù hợp cho 2 người), KHÔNG BỊA RA 4 hay 5 người.
@@ -778,7 +872,7 @@ public class AiServiceImpl implements AiService {
         long done = tasks.stream().filter(t -> "DONE".equalsIgnoreCase(t.getStatus())).count();
         long inProgress = tasks.stream().filter(t -> "IN_PROGRESS".equalsIgnoreCase(t.getStatus())).count();
         long todo = tasks.stream().filter(t -> "TODO".equalsIgnoreCase(t.getStatus())).count();
-        long review = tasks.stream().filter(t -> "REVIEW".equalsIgnoreCase(t.getStatus())).count();
+        long review = tasks.stream().filter(t -> "IN_REVIEW".equalsIgnoreCase(t.getStatus()) || "REVIEW".equalsIgnoreCase(t.getStatus())).count();
 
         String spaceName = space != null ? space.getName() : "Space #" + spaceId;
 

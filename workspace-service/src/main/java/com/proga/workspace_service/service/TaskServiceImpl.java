@@ -6,7 +6,9 @@ import com.proga.workspace_service.model.Priority;
 import com.proga.workspace_service.model.Task;
 import com.proga.workspace_service.model.TaskStatus;
 import com.proga.workspace_service.repository.TaskRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,22 @@ public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
     private final com.proga.workspace_service.repository.SprintRepository sprintRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final JdbcTemplate jdbcTemplate;
+
+    @PostConstruct
+    public void ensureTaskStatusConstraintUpdated() {
+        try {
+            jdbcTemplate.execute("ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_status_check");
+            jdbcTemplate.execute("UPDATE tasks SET status = 'IN_REVIEW' WHERE status = 'REVIEW'");
+        } catch (Exception ignored) {
+        }
+    }
+
+    private TaskStatus normalizeStatus(TaskStatus status) {
+        if (status == null) return TaskStatus.TODO;
+        if (status == TaskStatus.REVIEW) return TaskStatus.IN_REVIEW;
+        return status;
+    }
 
     @Override
     public TaskResponse createTask(TaskRequest request) {
@@ -30,7 +48,7 @@ public class TaskServiceImpl implements TaskService {
                 .sprintId(request.getSprintId())
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .status(request.getStatus() != null ? request.getStatus() : TaskStatus.TODO)
+                .status(normalizeStatus(request.getStatus()))
                 .priority(request.getPriority() != null ? request.getPriority() : Priority.MEDIUM)
                 .ownerId(request.getOwnerId())
                 .startDate(request.getStartDate())
@@ -79,7 +97,7 @@ public class TaskServiceImpl implements TaskService {
         task.setTitle(request.getTitle());
         task.setSprintId(request.getSprintId());
         task.setDescription(request.getDescription());
-        if (request.getStatus() != null) task.setStatus(request.getStatus());
+        if (request.getStatus() != null) task.setStatus(normalizeStatus(request.getStatus()));
         if (request.getPriority() != null) task.setPriority(request.getPriority());
         if (request.getOwnerId() == null || request.getOwnerId() <= 0) {
             task.setOwnerId(null);
@@ -99,7 +117,7 @@ public class TaskServiceImpl implements TaskService {
     public TaskResponse updateTaskStatus(long id, TaskStatus status) {
         Task task = taskRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
-        task.setStatus(status);
+        task.setStatus(normalizeStatus(status));
         Task updated = taskRepository.save(task);
         TaskResponse response = mapToResponse(updated);
         notifyWebsocket(updated.getSpaceId(), "UPDATE_STATUS", response);
@@ -256,7 +274,7 @@ public class TaskServiceImpl implements TaskService {
                 .sprintId(task.getSprintId())
                 .title(task.getTitle())
                 .description(task.getDescription())
-                .status(task.getStatus())
+                .status(normalizeStatus(task.getStatus()))
                 .priority(task.getPriority())
                 .ownerId(task.getOwnerId())
                 .startDate(task.getStartDate())
