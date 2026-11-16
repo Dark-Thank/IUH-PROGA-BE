@@ -11,4 +11,6 @@ public interface WorkspaceLogRepository extends JpaRepository<WorkspaceLog, Long
     List<WorkspaceLog> findByWorkspaceIdOrderByCreatedAtDesc(long workspaceId);
 
     List<WorkspaceLog> findByTaskIdOrderByCreatedAtDesc(long taskId);
+
+    List<WorkspaceLog> findByTaskIdInOrderByCreatedAtDesc(List<Long> taskIds);
 }

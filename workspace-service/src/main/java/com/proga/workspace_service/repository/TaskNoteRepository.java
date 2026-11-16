@@ -9,4 +9,8 @@ import java.util.List;
 @Repository
 public interface TaskNoteRepository extends JpaRepository<TaskNote, Long> {
     List<TaskNote> findByTaskIdOrderByCreatedAtAsc(long taskId);
+
+    List<TaskNote> findByTaskIdOrderByCreatedAtDesc(long taskId);
+
+    List<TaskNote> findByTaskIdInOrderByCreatedAtDesc(List<Long> taskIds);
 }
