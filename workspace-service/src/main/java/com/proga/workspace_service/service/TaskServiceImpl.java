@@ -23,8 +23,27 @@ public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
     private final com.proga.workspace_service.repository.SprintRepository sprintRepository;
+    private final com.proga.workspace_service.repository.WorkspaceLogRepository workspaceLogRepository;
+    private final com.proga.workspace_service.repository.SpaceRepository spaceRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final JdbcTemplate jdbcTemplate;
+
+    private void recordLog(long spaceId, Long taskId, Long userId, String actionType, String oldValue, String newValue, String message) {
+        try {
+            com.proga.workspace_service.model.Space space = spaceRepository.findById(spaceId).orElse(null);
+            long workspaceId = space != null ? space.getWorkspaceId() : 1L;
+            workspaceLogRepository.save(com.proga.workspace_service.model.WorkspaceLog.builder()
+                    .workspaceId(workspaceId)
+                    .taskId(taskId)
+                    .userId(userId != null ? userId : 1L)
+                    .actionType(actionType)
+                    .oldValue(oldValue)
+                    .newValue(newValue)
+                    .logMessage(message)
+                    .build());
+        } catch (Exception ignored) {
+        }
+    }
 
     @PostConstruct
     public void ensureTaskStatusConstraintUpdated() {
@@ -57,6 +76,7 @@ public class TaskServiceImpl implements TaskService {
 
         Task saved = taskRepository.save(task);
         TaskResponse response = mapToResponse(saved);
+        recordLog(saved.getSpaceId(), saved.getId(), saved.getOwnerId(), "CREATE_TASK", null, null, "Đã tạo công việc: " + saved.getTitle());
         notifyWebsocket(saved.getSpaceId(), "CREATE", response);
         return response;
     }
@@ -109,17 +129,34 @@ public class TaskServiceImpl implements TaskService {
 
         Task updated = taskRepository.save(task);
         TaskResponse response = mapToResponse(updated);
+        recordLog(updated.getSpaceId(), updated.getId(), updated.getOwnerId(), "UPDATE_TASK", null, null, "Đã cập nhật công việc: " + updated.getTitle());
         notifyWebsocket(updated.getSpaceId(), "UPDATE", response);
         return response;
+    }
+
+    private String toVietnameseStatus(TaskStatus status) {
+        if (status == null) return "Cần làm";
+        switch (status) {
+            case TODO: return "Cần làm";
+            case IN_PROGRESS: return "Đang làm";
+            case IN_REVIEW:
+            case REVIEW: return "Chờ duyệt";
+            case DONE: return "Đã xong";
+            default: return status.name();
+        }
     }
 
     @Override
     public TaskResponse updateTaskStatus(long id, TaskStatus status) {
         Task task = taskRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+        TaskStatus oldStatus = task.getStatus();
         task.setStatus(normalizeStatus(status));
         Task updated = taskRepository.save(task);
         TaskResponse response = mapToResponse(updated);
+        String oldVn = toVietnameseStatus(oldStatus);
+        String newVn = toVietnameseStatus(updated.getStatus());
+        recordLog(updated.getSpaceId(), updated.getId(), updated.getOwnerId(), "STATUS_CHANGE", oldVn, newVn, "Chuyển trạng thái từ '" + oldVn + "' sang '" + newVn + "'");
         notifyWebsocket(updated.getSpaceId(), "UPDATE_STATUS", response);
         return response;
     }
@@ -133,6 +170,7 @@ public class TaskServiceImpl implements TaskService {
         task.setDeleted(true);
         task.setDeletedAt(java.time.LocalDateTime.now());
         Task saved = taskRepository.save(task);
+        recordLog(saved.getSpaceId(), saved.getId(), saved.getOwnerId(), "DELETE_TASK", null, null, "Đã chuyển công việc vào thùng rác: " + saved.getTitle());
 
         long spaceId = saved.getSpaceId();
         TaskResponse response = mapToResponse(saved);
@@ -213,6 +251,7 @@ public class TaskServiceImpl implements TaskService {
         task.setDeletedAt(null);
         Task saved = taskRepository.save(task);
         TaskResponse response = mapToResponse(saved);
+        recordLog(saved.getSpaceId(), saved.getId(), saved.getOwnerId(), "RESTORE_TASK", null, null, "Đã khôi phục công việc: " + saved.getTitle());
         notifyWebsocket(saved.getSpaceId(), "RESTORE", response);
         return response;
     }
