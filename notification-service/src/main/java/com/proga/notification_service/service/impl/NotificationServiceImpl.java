@@ -47,6 +47,8 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = Notification.builder()
                 .userId(request.getUserId())
                 .workspaceId(request.getWorkspaceId())
+                .spaceId(request.getSpaceId())
+                .taskId(request.getTaskId())
                 .title(request.getTitle())
                 .content(request.getContent())
                 .isRead(false)
@@ -54,7 +56,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .build();
 
         Notification saved = notificationRepository.save(notification);
-        NotificationResponse response = mapToResponse(saved, typeCode, typeLabel);
+        NotificationResponse response = mapToResponse(saved, typeCode, typeLabel != null ? typeLabel : typeCode);
 
         // Realtime Push via STOMP WebSocket to user topic: /topic/notifications/{userId}
         try {
@@ -66,7 +68,21 @@ public class NotificationServiceImpl implements NotificationService {
 
         // Email sending if recipient email provided
         if (request.getRecipientEmail() != null && !request.getRecipientEmail().isBlank()) {
-            emailService.sendEmail(request.getRecipientEmail(), request.getTitle(), request.getContent());
+            log.info("[NOTIFICATION] Gửi email HTML thông báo tới [{}] | Tiêu đề: [{}]", request.getRecipientEmail(), request.getTitle());
+            emailService.sendEmail(
+                    request.getRecipientEmail(),
+                    request.getTitle(),
+                    request.getContent(),
+                    request.getSpaceName(),
+                    request.getTaskCode(),
+                    request.getActionUrl(),
+                    request.getSpaceId(),
+                    request.getTaskId(),
+                    request.getSenderName(),
+                    request.getReplyToEmail()
+            );
+        } else {
+            log.info("[NOTIFICATION] Không có recipientEmail cho notification id={} (userId={}). Bỏ qua gửi email.", saved.getId(), request.getUserId());
         }
 
         return response;
@@ -140,12 +156,14 @@ public class NotificationServiceImpl implements NotificationService {
                 .id(entity.getId())
                 .userId(entity.getUserId())
                 .workspaceId(entity.getWorkspaceId())
+                .spaceId(entity.getSpaceId())
+                .taskId(entity.getTaskId())
                 .title(entity.getTitle())
                 .content(entity.getContent())
                 .isRead(entity.getIsRead())
                 .typeId(entity.getTypeId())
                 .typeCode(typeCode)
-                .typeLabel(typeLabel)
+                .typeLabel(typeLabel != null ? typeLabel : typeCode)
                 .createdAt(entity.getCreatedAt())
                 .build();
     }

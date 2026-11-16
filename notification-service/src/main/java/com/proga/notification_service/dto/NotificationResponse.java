@@ -13,6 +13,8 @@ public class NotificationResponse {
     private long id;
     private long userId;
     private Long workspaceId;
+    private Long spaceId;
+    private Long taskId;
     private String title;
     private String content;
     private Boolean isRead;

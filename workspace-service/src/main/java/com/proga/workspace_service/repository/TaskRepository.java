@@ -12,6 +12,7 @@ import java.util.Optional;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findBySpaceIdAndIsDeletedFalse(long spaceId);
+    List<Task> findBySpaceIdAndIsDeletedFalseOrderByIdAsc(long spaceId);
 
     List<Task> findBySprintIdAndIsDeletedFalse(Long sprintId);
 

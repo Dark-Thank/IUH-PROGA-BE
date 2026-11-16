@@ -30,6 +30,20 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success("Email process initiated", null));
     }
 
+    @RequestMapping(value = "/test-email", method = {RequestMethod.GET, RequestMethod.POST})
+    public ResponseEntity<ApiResponse<String>> testEmail(@RequestParam(value = "to", required = false, defaultValue = "sonarro1712@gmail.com") String to) {
+        if (to == null || to.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, "Vui lòng cung cấp tham số 'to', ví dụ: ?to=your_email@gmail.com"));
+        }
+        String result = emailService.sendTestEmail(to);
+        boolean isSuccess = result.startsWith("THÀNH CÔNG");
+        if (isSuccess) {
+            return ResponseEntity.ok(ApiResponse.success(result, result));
+        } else {
+            return ResponseEntity.badRequest().body(ApiResponse.error(500, result));
+        }
+    }
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> getNotificationsByUserId(@PathVariable long userId) {
         List<NotificationResponse> response = notificationService.getNotificationsByUserId(userId);

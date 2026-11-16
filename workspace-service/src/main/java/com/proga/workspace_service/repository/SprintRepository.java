@@ -10,5 +10,6 @@ import java.util.List;
 @Repository
 public interface SprintRepository extends JpaRepository<Sprint, Long> {
     List<Sprint> findBySpaceId(long spaceId);
+    List<Sprint> findBySpaceIdOrderByIdAsc(long spaceId);
     List<Sprint> findBySpaceIdAndStatus(long spaceId, SprintStatus status);
 }
