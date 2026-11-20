@@ -25,6 +25,12 @@ public class Notification {
     @Column(name = "workspace_id")
     private Long workspaceId;
 
+    @Column(name = "space_id")
+    private Long spaceId;
+
+    @Column(name = "task_id")
+    private Long taskId;
+
     @Column(name = "title", length = 150)
     private String title;
 

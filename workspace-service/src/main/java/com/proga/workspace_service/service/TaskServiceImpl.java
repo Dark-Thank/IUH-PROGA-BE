@@ -27,6 +27,7 @@ public class TaskServiceImpl implements TaskService {
     private final com.proga.workspace_service.repository.SpaceRepository spaceRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final JdbcTemplate jdbcTemplate;
+    private final AppNotificationService appNotificationService;
 
     private void recordLog(long spaceId, Long taskId, Long userId, String actionType, String oldValue, String newValue, String message) {
         try {
@@ -90,7 +91,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public List<TaskResponse> getTasksBySpace(long spaceId) {
-        return taskRepository.findBySpaceIdAndIsDeletedFalse(spaceId).stream()
+        return taskRepository.findBySpaceIdAndIsDeletedFalseOrderByIdAsc(spaceId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -114,10 +115,14 @@ public class TaskServiceImpl implements TaskService {
         Task task = taskRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
 
+        Long oldOwnerId = task.getOwnerId();
+        TaskStatus oldStatus = task.getStatus();
+        TaskStatus newStatus = request.getStatus() != null ? normalizeStatus(request.getStatus()) : oldStatus;
+
         task.setTitle(request.getTitle());
         task.setSprintId(request.getSprintId());
         task.setDescription(request.getDescription());
-        if (request.getStatus() != null) task.setStatus(normalizeStatus(request.getStatus()));
+        if (request.getStatus() != null) task.setStatus(newStatus);
         if (request.getPriority() != null) task.setPriority(request.getPriority());
         if (request.getOwnerId() == null || request.getOwnerId() <= 0) {
             task.setOwnerId(null);
@@ -131,6 +136,21 @@ public class TaskServiceImpl implements TaskService {
         TaskResponse response = mapToResponse(updated);
         recordLog(updated.getSpaceId(), updated.getId(), updated.getOwnerId(), "UPDATE_TASK", null, null, "Đã cập nhật công việc: " + updated.getTitle());
         notifyWebsocket(updated.getSpaceId(), "UPDATE", response);
+
+        // Gửi thông báo phân công nếu có người phụ trách mới
+        if (updated.getOwnerId() != null && !updated.getOwnerId().equals(oldOwnerId)) {
+            appNotificationService.sendTaskAssigned(updated, null, null);
+        }
+
+        // Gửi thông báo chuyển trạng thái
+        if (newStatus == TaskStatus.DONE && oldStatus != TaskStatus.DONE) {
+            appNotificationService.sendTaskApproved(updated, null, null);
+        } else if ((oldStatus == TaskStatus.IN_REVIEW || oldStatus == TaskStatus.REVIEW) && newStatus == TaskStatus.IN_PROGRESS) {
+            appNotificationService.sendTaskRejected(updated, null, null, null);
+        } else if (newStatus == TaskStatus.IN_REVIEW && oldStatus != TaskStatus.IN_REVIEW && oldStatus != TaskStatus.REVIEW) {
+            appNotificationService.sendTaskSubmittedForReview(updated, updated.getOwnerId(), null);
+        }
+
         return response;
     }
 
@@ -151,13 +171,26 @@ public class TaskServiceImpl implements TaskService {
         Task task = taskRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
         TaskStatus oldStatus = task.getStatus();
-        task.setStatus(normalizeStatus(status));
+        TaskStatus newStatus = normalizeStatus(status);
+        task.setStatus(newStatus);
         Task updated = taskRepository.save(task);
         TaskResponse response = mapToResponse(updated);
         String oldVn = toVietnameseStatus(oldStatus);
         String newVn = toVietnameseStatus(updated.getStatus());
         recordLog(updated.getSpaceId(), updated.getId(), updated.getOwnerId(), "STATUS_CHANGE", oldVn, newVn, "Chuyển trạng thái từ '" + oldVn + "' sang '" + newVn + "'");
         notifyWebsocket(updated.getSpaceId(), "UPDATE_STATUS", response);
+
+        // Thông báo nghiệm thu hoặc từ chối duyệt
+        if (newStatus == TaskStatus.DONE && oldStatus != TaskStatus.DONE) {
+            appNotificationService.sendTaskApproved(updated, null, null);
+        } else if ((oldStatus == TaskStatus.IN_REVIEW || oldStatus == TaskStatus.REVIEW) && newStatus == TaskStatus.IN_PROGRESS) {
+            appNotificationService.sendTaskRejected(updated, null, null, null);
+        } else if (newStatus == TaskStatus.IN_REVIEW && oldStatus != TaskStatus.IN_REVIEW && oldStatus != TaskStatus.REVIEW) {
+            appNotificationService.sendTaskSubmittedForReview(updated, updated.getOwnerId(), null);
+        } else if (oldStatus != newStatus) {
+            appNotificationService.sendTaskStatusChanged(updated, updated.getOwnerId(), null, oldVn, newVn);
+        }
+
         return response;
     }
 

@@ -32,6 +32,7 @@ public class TaskDiscussionServiceImpl implements TaskDiscussionService {
     private final TaskRepository taskRepository;
     private final SpaceRepository spaceRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final com.proga.workspace_service.service.AppNotificationService appNotificationService;
 
     @Override
     public List<TaskNoteResponse> getNotesByTaskId(long taskId) {
@@ -89,6 +90,13 @@ public class TaskDiscussionServiceImpl implements TaskDiscussionService {
             ));
         } catch (Exception e) {
             log.warn("Failed to broadcast note via WebSocket: {}", e.getMessage());
+        }
+
+        // Gửi thông báo đến người phụ trách công việc nếu người khác bình luận
+        try {
+            appNotificationService.sendTaskCommented(task, authorId, null, request.getNoteContent());
+        } catch (Exception e) {
+            log.warn("Failed to dispatch task comment notification: {}", e.getMessage());
         }
 
         return response;

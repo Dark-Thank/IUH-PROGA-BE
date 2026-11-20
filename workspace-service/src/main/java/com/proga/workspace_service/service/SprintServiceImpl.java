@@ -42,7 +42,7 @@ public class SprintServiceImpl implements SprintService {
 
     @Override
     public List<SprintResponse> getSprintsBySpace(long spaceId) {
-        return sprintRepository.findBySpaceId(spaceId).stream()
+        return sprintRepository.findBySpaceIdOrderByIdAsc(spaceId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
